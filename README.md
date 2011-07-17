@@ -66,102 +66,102 @@ Configuration
 Creating an entity
 ------------------
 
-		namespace My\Entity;
-		use Doctrine\ORM\Mapping as ORM;
-		use Doctrine\Common\Collections\ArrayCollection;
-		use Spiffy\Doctrine\Annotations\Filters as Filter;
-		use Spiffy\Doctrine\Annotations\Validators as Assert;
-		use Spiffy\Entity;
+	namespace My\Entity;
+	use Doctrine\ORM\Mapping as ORM;
+	use Doctrine\Common\Collections\ArrayCollection;
+	use Spiffy\Doctrine\Annotations\Filters as Filter;
+	use Spiffy\Doctrine\Annotations\Validators as Assert;
+	use Spiffy\Entity;
+
+	/**
+	 * My\Entity\User
+	 *
+	 * @ORM\Table(name="user")
+	 * @ORM\Entity
+	 */
+	class User extends Entity
+	{
+		/**
+		 * @var integer $id
+		 *
+		 * @ORM\Column(name="id", type="integer")
+		 * @ORM\Id
+		 * @ORM\GeneratedValue(strategy="AUTO")
+		 */
+		private $id;
 
 		/**
-		 * My\Entity\User
-		 *
-		 * @ORM\Table(name="user")
-		 * @ORM\Entity
+		 * @var string $username
+		 * 
+		 * @ORM\Column(type="string",length=15)
 		 */
-		class User extends Entity
-		{
-			/**
-			 * @var integer $id
-			 *
-			 * @ORM\Column(name="id", type="integer")
-			 * @ORM\Id
-			 * @ORM\GeneratedValue(strategy="AUTO")
-			 */
-			private $id;
+		private $username;
 
-			/**
-			 * @var string $username
-			 * 
-			 * @ORM\Column(type="string",length=15)
-			 */
-			private $username;
+		/**
+		 * @var string $email
+		 *
+		 * @Assert\EmailAddress
+		 * @ORM\Column(type="string")
+		 */
+		private $email;
 
-			/**
-			 * @var string $email
-			 *
-			 * @Assert\EmailAddress
-			 * @ORM\Column(type="string")
-			 */
-			private $email;
-
-			/**
-			 * @var string $password
-			 *
-			 * @ORM\Column(type="string")
-			 */
-			private $password;
-		}
+		/**
+		 * @var string $password
+		 *
+		 * @ORM\Column(type="string")
+		 */
+		private $password;
+	}
 		
 Creating a form
 ---------------
-		namespace My\Forms;
-		use Spiffy\Dojo\Form;
-		use Doctrine\ORM\EntityRepository;
+	namespace My\Forms;
+	use Spiffy\Dojo\Form;
+	use Doctrine\ORM\EntityRepository;
 
-		class Register extends Form
-		{
-			/**
-			 * (non-PHPdoc)
-			 * @see Zend_Form::init()
-			 */
-			public function init() {
-				$this->setName('register');
-				$this->add('username');
-				$this->add('email');
-				$this->add('password', 'PasswordTextBox');
-				$this->add('confirm', 'PasswordTextBox', array('label' => 'Confirm'));
-				$this->add('submit', 'SubmitButton', array('label' => 'Register'));
-			}
-
-			/**
-			 * (non-PHPdoc)
-			 * @see Spiffy.Form::getDefaultOptions()
-			 */
-			public function getDefaultOptions() {
-				return array('entity' => 'My\Entity\User');
-			}
+	class Register extends Form
+	{
+		/**
+		 * (non-PHPdoc)
+		 * @see Zend_Form::init()
+		 */
+		public function init() {
+			$this->setName('register');
+			$this->add('username');
+			$this->add('email');
+			$this->add('password', 'PasswordTextBox');
+			$this->add('confirm', 'PasswordTextBox', array('label' => 'Confirm'));
+			$this->add('submit', 'SubmitButton', array('label' => 'Register'));
 		}
+
+		/**
+		 * (non-PHPdoc)
+		 * @see Spiffy.Form::getDefaultOptions()
+		 */
+		public function getDefaultOptions() {
+			return array('entity' => 'My\Entity\User');
+		}
+	}
 		
 Creating a controller
 ---------------------
-		use My\Forms\Register;
+	use My\Forms\Register;
 
-		class RegisterController extends Zend_Controller_Action
-		{
-			public function indexAction() {
-				$form = new Register();
-				$request = $this->getRequest();
+	class RegisterController extends Zend_Controller_Action
+	{
+		public function indexAction() {
+			$form = new Register();
+			$request = $this->getRequest();
 
-				if ($request->isPost()) {
-					if ($form->isValid($request->getPost())) {
-						$entity = $form->getEntity(); // instance of My\Entity\User
-						
-						// entity is automatically persisted unless automaticPersisting is disabled
-						// during class initialization or via getDefaultOptions().
-					}
+			if ($request->isPost()) {
+				if ($form->isValid($request->getPost())) {
+					$entity = $form->getEntity(); // instance of My\Entity\User
+					
+					// entity is automatically persisted unless automaticPersisting is disabled
+					// during class initialization or via getDefaultOptions().
 				}
-
-				$this->view->form = $form;
 			}
+
+			$this->view->form = $form;
 		}
+	}
