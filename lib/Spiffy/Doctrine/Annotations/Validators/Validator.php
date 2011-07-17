@@ -1,5 +1,5 @@
 <?php
-namespace Spiffy\Doctrine\Annotations\Zend;
+namespace Spiffy\Doctrine\Annotations\Validators;
 use Doctrine\Common\Annotations\Annotation;
 
 /** Zend Validator SuperClass */

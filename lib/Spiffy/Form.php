@@ -1,21 +1,39 @@
 <?php
 namespace Spiffy;
+use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Spiffy\Dojo\Form as SpiffyDojoForm;
 use Zend_Dojo;
-use Zend_Exception;
+use Zend_Form_Exception;
 use Zend_Filter_Word_UnderscoreToCamelCase;
 use Zend_Form;
 
 abstract class Form extends Zend_Form
 {
 	/**
+	 * @var string
+	 */
+	const FILTER_NAMESPACE = 'Spiffy\\Doctrine\\Annotations\\Filters\\Filter';
+
+	/**
+	 * @var string
+	 */
+	const VALIDATOR_NAMESPACE = 'Spiffy\\Doctrine\\Annotations\\Validators\\Validator';
+
+	/**
 	 * Default entity manager if one is not specified.
 	 * 
 	 * @var EntityManager
 	 */
 	protected static $_defaultEntityManager = null;
+
+	/**
+	 * Doctrine 2 annotation reader.
+	 * 
+	 * @var Doctrine\Common\Annotations\AnnotationReader
+	 */
+	protected static $_reader = null;
 
 	/**
 	 * Case conversion filter.
@@ -39,18 +57,25 @@ abstract class Form extends Zend_Form
 	protected $_entity = null;
 
 	/**
-	 * Doctrine 2 annotations reader.
-	 * 
-	 * @var AnnotationRedaer
+	 * flag: automatically persist valid entities?
+	 *
+	 * @var boolean
 	 */
-	protected $_reader = null;
+	protected $_automaticPersisting = false;
 
 	/**
-	 * Validator namespace for Spiffy Doctrine 2 annotations.
+	 * flag: use automatic filters?
 	 * 
-	 * @var string
+	 * @var boolean
 	 */
-	protected $_zendValidatorNamespace = 'Spiffy\\Doctrine\\Annotations\\Zend\\Validator';
+	protected $_automaticFilters = true;
+
+	/**
+	 * flag: use automatic validators?
+	 * 
+	 * @var boolean
+	 */
+	protected $_automaticValidators = true;
 
 	/**
 	 * Default elements for Zend_Form.
@@ -58,12 +83,19 @@ abstract class Form extends Zend_Form
 	 * @var array
 	 */
 	protected $_defaultElements = array(
-		'smallint' => 'text',
-		'datetime' => 'text',
-		'integer' => 'text',
-		'boolean' => 'checkbox',
-		'string' => 'text',
-		'text' => 'textarea');
+		Type::SMALLINT => 'text',
+		Type::BIGINT => 'text',
+		Type::INTEGER => 'text',
+		Type::BOOLEAN => 'checkbox',
+		Type::DATE => 'text',
+		Type::DATETIME => 'text',
+		Type::DATETIMETZ => 'text',
+		Type::DECIMAL => 'text',
+		Type::OBJECT => null,
+		Type::TARRAY => null,
+		Type::STRING => 'text',
+		Type::TEXT => 'textarea',
+		Type::TIME => 'text');
 
 	/**
 	 * Constructor
@@ -93,7 +125,9 @@ abstract class Form extends Zend_Form
 		}
 
 		// used to read validation annotations if they exist
-		$this->_reader = new AnnotationReader();
+		if (null === self::$_reader) {
+			self::$_reader = new AnnotationReader();
+		}
 
 		// assemble form
 		$options = array_merge(is_array($options) ? $options : array(), $this->getDefaultOptions());
@@ -101,6 +135,16 @@ abstract class Form extends Zend_Form
 
 		// set entity defaults if an entity is present
 		$this->setDefaults($this->entityToArray());
+	}
+
+	public function getPropertyAnnotations($property, $namespace) {
+		$annotations = array();
+		foreach (self::$_reader->getPropertyAnnotations($property) as $annotation) {
+			if ($annotation instanceof $namespace) {
+				$annotations[] = $annotation;
+			}
+		}
+		return $annotations;
 	}
 
 	/**
@@ -113,56 +157,97 @@ abstract class Form extends Zend_Form
 	 * @return Zend_Form
 	 */
 	public function add($name, $element = null, $options = null) {
-		if ($entity = $this->getEntity()) {
-			$md = $this->getEntityMetadata();
+		if (!$this->getEntity()) {
+			throw new Zend_Form_Exception('add() can only be used with a set entity');
+		}
 
-			if (isset($md->reflFields[$name])) {
-				if ($annotations = $this->_reader->getPropertyAnnotations($md->reflFields[$name])) {
-					foreach ($annotations as $index => $annotation) {
-						if (!$annotation instanceof $this->_zendValidatorNamespace) {
-							continue;
-						}
+		$md = $this->getEntityMetadata();
+		if ($columnType = $md->getTypeOfField($name)) {
+			$fieldMapping = $md->getFieldMapping($name);
+			$refProperty = $md->getReflectionProperty($name);
 
-						$validator = str_replace('Spiffy\\Doctrine\\Annotations\\Zend\\', '',
-							get_class($annotation));
-						$options['validators'][$index]['validator'] = $validator;
-						if (!empty($annotation->value)) {
-							$options['validators'][$index]['options'] = $annotation->value;
-						}
+			$filters = $this->getPropertyAnnotations($refProperty, self::FILTER_NAMESPACE);
+			foreach ($filters as $filter) {
+				$class = str_replace('Zend_Filter_', '', $filter->class);
+				$options['filters'][$class]['filter'] = $class;
+				if (!empty($filter->value)) {
+					$options['filters'][$class]['options'] = $filter->value;
+				}
+			}
+
+			$validators = $this->getPropertyAnnotations($refProperty, self::VALIDATOR_NAMESPACE);
+			foreach ($validators as $validator) {
+				$class = str_replace('Zend_Validate_', '', $validator->class);
+				$options['validators'][$class]['validator'] = $class;
+				if (!empty($validator->value)) {
+					$options['validators'][$class]['options'] = $validator->value;
+				}
+			}
+
+			// automatic filters based on column type
+			if ($this->_automaticFilters) {
+				$filters = array();
+				switch ($columnType) {
+					case Type::SMALLINT:
+					case Type::INTEGER:
+					case Type::BIGINT:
+						$filters[] = 'Int';
+						break;
+					case Type::BOOLEAN:
+						$filters[] = 'Boolean';
+						break;
+					case Type::TEXT:
+					case Type::STRING:
+						$filters[] = 'StringTrim';
+						break;
+				}
+
+				foreach ($filters as $filter) {
+					if (!isset($options['filters'][$filter])) {
+						$options['filters'][$filter]['filter'] = $filter;
 					}
 				}
 			}
 
-			$map = null;
-			if (isset($md->fieldMappings[$name])) {
-				$map = $md->fieldMappings[$name];
-			} elseif (isset($md->associationMappings[$name])) {
-				$map = $md->associationMappings[$name];
-			}
-
-			if ($map) {
-				$type = $map['type'];
-
-				if (isset($map['nullable']) && (false === $map['nullable'])) {
+			// automatic validators based on column type
+			if ($this->_automaticValidators) {
+				if (!$fieldMapping['nullable']) {
 					$options['required'] = true;
-					if (!isset($options['missingMessage']) && $this instanceof SpiffyDojoForm) {
-						$options['missingMessage'] = "{$name} is required and cannot be empty";
+				}
+
+				$validators = array();
+				switch ($columnType) {
+					case Type::STRING:
+						if ($fieldMapping['length']) {
+							$validators[] = array(
+								'name' => 'StringLength',
+								'options' => array('max' => $fieldMapping['length']));
+						}
+						break;
+				}
+
+				foreach ($validators as $validator) {
+					$vname = $validator['name'];
+					$voptions = isset($validator['options']) ? $validator['options'] : array();
+
+					if (!isset($options['validators'][$vname])) {
+						$options['validators'][$vname]['validator'] = $vname;
+						$options['validators'][$vname]['options'] = $voptions;
 					}
 				}
+			}
 
-				if (!$element) {
-					$element = isset($this->_defaultElements[$type]) ? $this
-							->_defaultElements[$type] : null;
-				}
+			if (!isset($options['label'])) {
+				$options['label'] = ucfirst($name);
+			}
 
-				if (!isset($options['label'])) {
-					$options['label'] = ucfirst($name);
-				}
+			if (null === $element && isset($this->_defaultElements[$columnType])) {
+				$element = $this->_defaultElements[$columnType];
 			}
 		}
 
 		if (!$element) {
-			throw new Zend_Exception(
+			throw new Zend_Form_Exception(
 				"element type was not specified for '{$name}' and could not be guessed");
 		}
 
@@ -176,6 +261,18 @@ abstract class Form extends Zend_Form
 	 */
 	public function getEntityMetadata() {
 		return $this->getEntityManager()->getClassMetadata(get_class($this->getEntity()));
+	}
+
+	public function setAutomaticValidators($value) {
+		$this->_automaticValidators = $value;
+	}
+
+	public function setAutomaticFilters($value) {
+		$this->_automaticFilters = $value;
+	}
+
+	public function setAutomaticPersist() {
+		$this->_automaticPersisting = $value;
 	}
 
 	/**
@@ -198,7 +295,7 @@ abstract class Form extends Zend_Form
 		} elseif (is_string($entity)) {
 			$entity = new $entity();
 		} else {
-			throw new Zend_Exception('Unknown input for setEntity()');
+			throw new Zend_Form_Exception('Unknown input for setEntity()');
 		}
 		$this->_entity = $entity;
 	}
@@ -230,7 +327,7 @@ abstract class Form extends Zend_Form
 		$em = $this->_entityManager;
 		if (null === $this->_entityManager) {
 			if (null === self::getDefaultEntityManager()) {
-				throw new Zend_Exception('entity manager was not set');
+				throw new Zend_Form_Exception('entity manager was not set');
 			}
 			$em = self::getDefaultEntityManager();
 		}
@@ -253,7 +350,7 @@ abstract class Form extends Zend_Form
 	 *
 	 * Requires setters if fromArray is not present!
 	 *
-	 * @throws Zend_Exception
+	 * @throws Zend_Form_Exception
 	 * @return void
 	 */
 	public function setEntityDefaults(array $data) {
@@ -285,7 +382,7 @@ abstract class Form extends Zend_Form
 			} elseif (isset($this->{$key}) || property_exists($this->getEntity(), $key)) {
 				$this->getEntity()->$key = $value;
 			} else {
-				throw new Zend_Exception(
+				throw new Zend_Form_Exception(
 					"property '{$key}' is not public: perhaps add {$setter}()?");
 			}
 		}
@@ -322,7 +419,7 @@ abstract class Form extends Zend_Form
 			} elseif (isset($this->{$key}) || property_exists($this->getEntity(), $key)) {
 				$value = $this->getEntity()->$key;
 			} else {
-				throw new Zend_Exception(
+				throw new Zend_Form_Exception(
 					"property '{$field}' is not public: perhaps add {$getter}()?");
 			}
 			$output[$field] = $value;
@@ -342,34 +439,14 @@ abstract class Form extends Zend_Form
 
 	/**
 	 * (non-PHPdoc)
-	 * @see Zend_Form::setOptions()
-	 */
-	public function setOptions(array $options) {
-		foreach ($options as $key => $value) {
-			switch ($key) {
-				case 'entity':
-					if (!$this->getEntity()) {
-						$this->setEntity($value);
-					}
-					break;
-				default:
-					throw new Zend_Exception("unknown option: '{$key}'");
-			}
-
-			parent::setOptions($options);
-		}
-	}
-
-	/**
-	 * (non-PHPdoc)
 	 * @see Zend_Form::isValid()
 	 */
 	public function isValid($data) {
-		$this->setEntityDefaults($data);
-
-		if (($valid = parent::isValid($data)) && $this->_autoPersist) {
+		if (($valid = parent::isValid($data)) && $this->_automaticPersisting) {
 			$this->getEntityManager()->persist($this->getEntity());
 		}
+
+		$this->setEntityDefaults($this->getValues());
 
 		return $valid;
 	}
