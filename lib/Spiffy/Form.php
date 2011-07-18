@@ -1,13 +1,14 @@
 <?php
 namespace Spiffy;
-use Doctrine\DBAL\Types\Type;
-use Doctrine\ORM\EntityManager;
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\DBAL\Types\Type;
+use Spiffy\Doctrine\Container as Container;
 use Spiffy\Dojo\Form as SpiffyDojoForm;
 use Zend_Dojo;
 use Zend_Form_Exception;
 use Zend_Filter_Word_UnderscoreToCamelCase;
 use Zend_Form;
+use Zend_Registry;
 
 abstract class Form extends Zend_Form
 {
@@ -22,20 +23,6 @@ abstract class Form extends Zend_Form
 	const VALIDATOR_NAMESPACE = 'Spiffy\\Doctrine\\Annotations\\Validators\\Validator';
 
 	/**
-	 * Default entity manager if one is not specified.
-	 * 
-	 * @var EntityManager
-	 */
-	protected static $_defaultEntityManager = null;
-
-	/**
-	 * Doctrine 2 annotation reader.
-	 * 
-	 * @var Doctrine\Common\Annotations\AnnotationReader
-	 */
-	protected static $_reader = null;
-
-	/**
 	 * Case conversion filter.
 	 * 
 	 * @var Zend_Filter_Word_UnderscoreToCamelCase
@@ -43,11 +30,11 @@ abstract class Form extends Zend_Form
 	protected static $_caseFilter = null;
 
 	/**
-	 * Instance based entity manager.
+	 * Doctrine 2 annotation reader.
 	 * 
-	 * @var EntityManager
+	 * @var Doctrine\Common\Annotations\AnnotationReader
 	 */
-	protected $_entityManager = null;
+	protected static $_annotationReader = null;
 
 	/**
 	 * Doctrine 2 entity, if any.
@@ -76,6 +63,15 @@ abstract class Form extends Zend_Form
 	 * @var boolean
 	 */
 	protected $_automaticValidators = true;
+
+	/**
+	 * The default entity manager to use in case there are multiple
+	 * ones available. Set this using constructor options or the
+	 * getDefaultOptions() method.
+	 * 
+	 * @var string
+	 */
+	protected $_defaultEntityManager = 'default';
 
 	/**
 	 * Default elements for Zend_Form.
@@ -116,17 +112,19 @@ abstract class Form extends Zend_Form
 		$this->getView()->addHelperPath('Spiffy/View/Helper', 'Spiffy_View_Helper');
 
 		// filter for setters/getters
-		self::$_caseFilter = new Zend_Filter_Word_UnderscoreToCamelCase();
+		if (null === self::$_caseFilter) {
+			self::$_caseFilter = new Zend_Filter_Word_UnderscoreToCamelCase();
+		}
+
+		// annotation reader
+		if (null === self::$_annotationReader) {
+			self::$_annotationReader = new AnnotationReader();
+		}
 
 		// set the entity prior to loading options in case there's a default entity set
 		// this way, the entity called on construction overwrites the entity set in getDefaultOptions()
 		if ($entity) {
 			$this->setEntity($entity);
-		}
-
-		// used to read validation annotations if they exist
-		if (null === self::$_reader) {
-			self::$_reader = new AnnotationReader();
 		}
 
 		// assemble form
@@ -135,16 +133,6 @@ abstract class Form extends Zend_Form
 
 		// set entity defaults if an entity is present
 		$this->setDefaults($this->entityToArray());
-	}
-
-	public function getPropertyAnnotations($property, $namespace) {
-		$annotations = array();
-		foreach (self::$_reader->getPropertyAnnotations($property) as $annotation) {
-			if ($annotation instanceof $namespace) {
-				$annotations[] = $annotation;
-			}
-		}
-		return $annotations;
 	}
 
 	/**
@@ -166,7 +154,7 @@ abstract class Form extends Zend_Form
 			$fieldMapping = $md->getFieldMapping($name);
 			$refProperty = $md->getReflectionProperty($name);
 
-			$filters = $this->getPropertyAnnotations($refProperty, self::FILTER_NAMESPACE);
+			$filters = $this->_getPropertyAnnotations($refProperty, self::FILTER_NAMESPACE);
 			foreach ($filters as $filter) {
 				$class = str_replace('Zend_Filter_', '', $filter->class);
 				$options['filters'][$class]['filter'] = $class;
@@ -175,7 +163,7 @@ abstract class Form extends Zend_Form
 				}
 			}
 
-			$validators = $this->getPropertyAnnotations($refProperty, self::VALIDATOR_NAMESPACE);
+			$validators = $this->_getPropertyAnnotations($refProperty, self::VALIDATOR_NAMESPACE);
 			foreach ($validators as $validator) {
 				$class = str_replace('Zend_Validate_', '', $validator->class);
 				$options['validators'][$class]['validator'] = $class;
@@ -255,23 +243,58 @@ abstract class Form extends Zend_Form
 	}
 
 	/**
+	 * Setter for default entity manager.
+	 * 
+	 * @param string $emName
+	 */
+	public function setDefaultEntityManager($emName) {
+		$this->_defaultEntityManager = $emName;
+	}
+
+	/**
+	 * Get the entity manager.
+	 * 
+	 * @return Doctrine\ORM\EntityManager
+	 */
+	public function getEntityManager($emName = null) {
+		$emName = $emName ? $emName : $this->_defaultEntityManager;
+		return Container::getEntityManager($emName);
+	}
+
+	/**
 	 * Getter for entity metadata.
 	 *
 	 * @return Doctrine\ORM\Mapping\ClassMetadata
 	 */
 	public function getEntityMetadata() {
+		$em = $this->getEntityManager();
 		return $this->getEntityManager()->getClassMetadata(get_class($this->getEntity()));
 	}
 
+	/**
+	 * Sets automatic validators.
+	 * 
+	 * @param boolean $value
+	 */
 	public function setAutomaticValidators($value) {
 		$this->_automaticValidators = $value;
 	}
 
+	/**
+	 * Sets automatic filters.
+	 *
+	 * @param boolean $value
+	 */
 	public function setAutomaticFilters($value) {
 		$this->_automaticFilters = $value;
 	}
 
-	public function setAutomaticPersist() {
+	/**
+	 * Sets automatic validators.
+	 *
+	 * @param boolean $value
+	 */
+	public function setAutomaticPersisting() {
 		$this->_automaticPersisting = $value;
 	}
 
@@ -298,49 +321,6 @@ abstract class Form extends Zend_Form
 			throw new Zend_Form_Exception('Unknown input for setEntity()');
 		}
 		$this->_entity = $entity;
-	}
-
-	/**
-	 * Getter for default entity manager.
-	 * 
-	 * @return EntityManager
-	 */
-	public static function getDefaultEntityManager() {
-		return self::$_defaultEntityManager;
-	}
-
-	/**
-	 * Setter for default entity manager.
-	 * 
-	 * @param EntityManager $em
-	 */
-	public static function setDefaultEntityManager(EntityManager $em) {
-		self::$_defaultEntityManager = $em;
-	}
-
-	/**
-	 * Getter for entity manager.
-	 * 
-	 * @return EntityManager
-	 */
-	public function getEntityManager() {
-		$em = $this->_entityManager;
-		if (null === $this->_entityManager) {
-			if (null === self::getDefaultEntityManager()) {
-				throw new Zend_Form_Exception('entity manager was not set');
-			}
-			$em = self::getDefaultEntityManager();
-		}
-		return $em;
-	}
-
-	/**
-	 * Setter for entity manager
-	 * 
-	 * @param EntityManager $em
-	 */
-	public function setEntityManager(EntityManager $em) {
-		$this->_entityManager = $em;
 	}
 
 	/**
@@ -449,5 +429,23 @@ abstract class Form extends Zend_Form
 		$this->setEntityDefaults($this->getValues());
 
 		return $valid;
+	}
+
+	/**
+	 * Returns the annotations for a given property.
+	
+	 * @param ReflectionClass $property
+	 * @param null|string $namespace
+	 */
+	protected function _getPropertyAnnotations($property, $namespace = null) {
+		$annotations = array();
+		$reader = self::$_annotationReader;
+
+		foreach ($reader->getPropertyAnnotations($property) as $annotation) {
+			if ($annotation instanceof $namespace) {
+				$annotations[] = $annotation;
+			}
+		}
+		return $annotations;
 	}
 }

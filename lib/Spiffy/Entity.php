@@ -10,21 +10,25 @@ use Zend_Validate;
 class Entity
 {
 	/**
+	 * @var string
+	 */
+	const FILTER_NAMESPACE = 'Spiffy\\Doctrine\\Annotations\\Filters\\Filter';
+
+	/**
+	 * @var string
+	 */
+	const VALIDATOR_NAMESPACE = 'Spiffy\\Doctrine\\Annotations\\Validators\\Validator';
+
+	/**
 	 * CamelCase Filter 
 	 * @var Zend_Filter_Word_UnderscoreToCamelCase
 	 */
-	protected static $__filter = null;
-
-	/**
-	 * Error messages from last validation.
-	 * @var array
-	 */
-	protected static $__messages = array();
+	protected static $__filterCase = null;
 
 	/**
 	 * @var Doctrine\Common\Annotations\AnnotationReader
 	 */
-	protected static $__reader = null;
+	protected static $__annotationReader = null;
 
 	/**
 	 * @var array
@@ -37,81 +41,79 @@ class Entity
 	protected static $__properties = array();
 
 	/**
-	 * Initialize the entity.
+	 * Error messages from last validation.
+	 * @var array
+	 */
+	protected $_messages = array();
+
+	/**
+	 * Initialize the entity. This is done to cache the properties so they
+	 * only have to be initialized once.
 	 */
 	protected static function __initialize() {
-		$class = get_called_class();
-		if (isset(self::$__properties[$class])) {
+		if (isset(self::$__properties[get_called_class()])) {
 			return;
 		}
 
-		if (null === self::$__filter) {
-			self::$__filter = new Zend_Filter_Word_UnderscoreToCamelCase();
+		if (null === self::$__filterCase) {
+			self::$__filterCase = new Zend_Filter_Word_UnderscoreToCamelCase();
 		}
 
-		if (null === self::$__reader) {
-			self::$__reader = new AnnotationReader();
+		if (null === self::$__annotationReader) {
+			self::$__annotationReader = new AnnotationReader();
 		}
 
-		$reader = self::$__reader;
-		$reflClass = self::$__reflClass[$class] = new ReflectionClass($class);
+		$reader = self::$__annotationReader;
+		$reflClass = self::$__reflClass[get_called_class()] = new ReflectionClass(
+			get_called_class());
+
+		$properties = &self::$__properties[get_called_class()];
 		foreach ($reflClass->getProperties() as $property) {
-			$name = $property->name;
-			self::$__properties[$class][$name]['annotations'] = $reader
-				->getPropertyAnnotations($property);
-			self::$__properties[$class][$name]['reflClass'] = $property;
-			self::$__properties[$class][$name]['validator'] = null;
-		}
-	}
-
-	/**
-	 * Returns the error messages for the last validation attempt.
-	 * 
-	 * @return array
-	 */
-	public static function getValidatorMessages() {
-		if (isset(self::$__messages[get_called_class()])) {
-			return self::$__messages[get_called_class()];
-		}
-		return array();
-	}
-
-	/**
-	 * Gets a properties annotations. If a namespace is specified then only annotations
-	 * matching (regex) that namespace will be returned.
-	 * 
-	 * @param string $property
-	 * @param string $annotation
-	 * @return array
-	 */
-	public static function getPropertyAnnotations($property, $namespace = null) {
-		$calledClass = get_called_class();
-
-		if (!isset(self::$__properties[$calledClass][$property])) {
-			throw new Zend_Exception("unable to find property by name '{$property}'");
-		}
-
-		if (null === $namespace) {
-			return self::$__properties[$calledClass][$property];
-		}
-
-		$annotations = array();
-		foreach (self::$__properties[$calledClass][$property]['annotations'] as $annotation) {
-			$regex = '/' . preg_quote($namespace) . '/';
-			if (preg_match($regex, get_class($annotation))) {
-				$annotations[] = $annotation;
+			if (substr($property->name, 0, 2) == '__') {
+				continue;
 			}
+
+			$properties[$property->name]['reflClass'] = $property;
+			$properties[$property->name]['validatorChain'] = null;
 		}
-		return $annotations;
 	}
 
 	/**
-	 * Returns the property names only.
+	 * Returns the class properties names only.
 	 * 
 	 * @return array
 	 */
 	public static function getProperties() {
-		return array_keys(self::$__properties[get_called_class()]);
+		self::__initialize();
+		return self::$__properties[get_called_class()];
+	}
+
+	/**
+	 * Get the annotation reader.
+	 * 
+	 * @return Doctrine\Common\Annotations\AnnotationReader
+	 */
+	public static function getAnnotationReader() {
+		self::__initialize();
+		return self::$__annotationReader;
+	}
+
+	/**
+	 * Returns the annotations for a given property.
+	
+	 * @param ReflectionClass $property
+	 * @param null|string $namespace
+	 */
+	protected static function _getPropertyAnnotations($property, $namespace = null) {
+		$annotations = array();
+		$reader = self::getAnnotationReader();
+
+		foreach ($reader->getPropertyAnnotations($property) as $annotation) {
+			if ($annotation instanceof $namespace) {
+				$annotations[] = $annotation;
+			}
+		}
+		return $annotations;
 	}
 
 	/**
@@ -120,18 +122,19 @@ class Entity
 	 * @param string $property
 	 * @return array
 	 */
-	public static function getPropertyValidator($property) {
-		$calledClass = get_called_class();
+	protected static function _getPropertyValidator($property) {
+		self::__initialize();
 
-		if (!isset(self::$__properties[$calledClass][$property])) {
+		if (!isset(self::$__properties[get_called_class()][$property])) {
 			throw new Zend_Exception("unable to find property by name '{$property}'");
 		}
 
-		$validatorChain = &self::$__properties[$calledClass][$property]['validator'];
-		if (null === $validatorChain) {
-			$namespace = 'Spiffy\Doctrine\Annotations\Zend';
+		$property = &self::$__properties[get_called_class()][$property];
+		$validatorChain = &$property['validatorChain'];
 
-			$annotations = self::getPropertyAnnotations($property, $namespace);
+		if (null === $validatorChain) {
+			$annotations = self::_getPropertyAnnotations($property['reflClass'],
+				self::VALIDATOR_NAMESPACE);
 
 			if (empty($annotations)) {
 				$validatorChain = array();
@@ -158,36 +161,35 @@ class Entity
 	}
 
 	/**
-	 * Constructor.
+	 * Returns the error messages for the last validation attempt.
+	 *
+	 * @return array
 	 */
-	public function __construct() {
-		self::__initialize();
-
-		$this->init();
-	}
-
-	/**
-	 * Child initialization.
-	 */
-	public function init() {
+	public function getValidatorMessages() {
+		return $this->_messages;
 	}
 
 	/**
 	 * Checks the entities validity.
+	 * 
+	 * @return boolean
 	 */
 	public function isValid() {
+		self::__initialize();
+
 		$valid = true;
-		foreach (self::getProperties() as $property) {
-			$validatorChain = self::getPropertyValidator($property);
+		foreach (array_keys(self::getProperties()) as $property) {
+			$validatorChain = self::_getPropertyValidator($property);
 
 			if (empty($validatorChain)) {
 				continue;
 			}
 
-			$getter = 'get' . ucfirst(self::$__filter->filter($property));
+			$objectVars = get_object_vars($this);
+			$getter = 'get' . ucfirst(self::$__filterCase->filter($property));
 			if (method_exists($this, $getter)) {
 				$value = $this->$getter();
-			} elseif (property_exists($this, $property)) {
+			} elseif (array_key_exists($property, $objectVars)) {
 				$value = $this->$property;
 			} else {
 				throw new Zend_Exception(
@@ -197,7 +199,7 @@ class Entity
 
 			$amValid = $validatorChain->isValid($value);
 			if (!$amValid) {
-				self::$__messages[get_class($this)][] = $validatorChain->getMessages();
+				$this->_messages = $validatorChain->getMessages();
 				$valid = false;
 			}
 		}

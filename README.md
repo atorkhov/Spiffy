@@ -41,26 +41,24 @@ Configuration
 		
 		// application/configs/application.ini
 		autoloaderNamespaces[] = Spiffy
-		autoloaderNamespaces[] = Spiffy_
 		
 3. Add the pluginPaths to application.ini
 
 		// application/configs/application.ini
 		pluginPaths.Spiffy_Application_Resource = "Spiffy/Application/Resource"
 		
-4. Add the annotations to Doctrine in your bootstrap.
+4. Add the resource to application.ini and register the annotation files.
 
-		// application/Bootstrap.php
-		public function _initDoctrineAutoloaderNamespace() {
-			\Doctrine\Common\Annotations\AnnotationRegistry::registerFile("Spiffy/Doctrine/Annotations/Filters/Filter.php");
-			\Doctrine\Common\Annotations\AnnotationRegistry::registerFile("Spiffy/Doctrine/Annotations/Validators/Validator.php");
-		}
+		// application/configs/application.ini
+		resources.spiffy.annotationFiles[] = "Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php"
+		resources.spiffy.annotationFiles[] = "Spiffy/Doctrine/Annotations/Filters/Filter.php"
+		resources.spiffy.annotationFiles[] = "Spiffy/Doctrine/Annotations/Validators/Validator.php" 
 		
 5. Set the default EntityManager.
 
 		// application/Bootstrap.php
-		public function _initSpiffyEntityManager() {
-			\Spiffy\Form::setDefaultEntityManager($em);
+		public function _initEntityManagers() {
+			\Spiffy\Doctrine\Container::setEntityManager($em);
 		}
 		
 Creating an entity
