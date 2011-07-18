@@ -36,15 +36,31 @@ class Entity
 	protected static $__reflClass = array();
 
 	/**
+	 * Array of propertie sfor use with toArray, fromArray, get, and set.
+	 * 
 	 * @var array
 	 */
 	protected static $__properties = array();
 
 	/**
+	 * An array of properties with filter annotations.
+	 * 
+	 * @var array
+	 */
+	protected static $__filterable = array();
+
+	/**
+	 * An array of properties with validator annotations.
+	 * 
+	 * @var array
+	 */
+	protected static $__validatable = array();
+
+	/**
 	 * Error messages from last validation.
 	 * @var array
 	 */
-	protected $_messages = array();
+	protected $__messages = array();
 
 	/**
 	 * Initialize the entity. This is done to cache the properties so they
@@ -67,35 +83,24 @@ class Entity
 		$reflClass = self::$__reflClass[get_called_class()] = new ReflectionClass(
 			get_called_class());
 
-		$properties = &self::$__properties[get_called_class()];
+		// all properties of the class used for toArray(), fromArray(), get(), and set()
 		foreach ($reflClass->getProperties() as $property) {
 			if (substr($property->name, 0, 2) == '__') {
 				continue;
 			}
 
-			$properties[$property->name]['reflClass'] = $property;
-			$properties[$property->name]['validatorChain'] = null;
+			self::$__properties[get_called_class()][$property->name] = $property;
+
+			if ($annotations = self::_getPropertyAnnotations($property, self::FILTER_NAMESPACE)) {
+				self::$__filterable[get_called_class()][$property->name]['chain'] = null;
+				self::$__filterable[get_called_class()][$property->name]['annotations'] = $annotations;
+			}
+
+			if ($annotations = self::_getPropertyAnnotations($property, self::VALIDATOR_NAMESPACE)) {
+				self::$__validatable[get_called_class()][$property->name]['chain'] = null;
+				self::$__validatable[get_called_class()][$property->name]['annotations'] = $annotations;
+			}
 		}
-	}
-
-	/**
-	 * Returns the class properties names only.
-	 * 
-	 * @return array
-	 */
-	public static function getProperties() {
-		self::__initialize();
-		return self::$__properties[get_called_class()];
-	}
-
-	/**
-	 * Get the annotation reader.
-	 * 
-	 * @return Doctrine\Common\Annotations\AnnotationReader
-	 */
-	public static function getAnnotationReader() {
-		self::__initialize();
-		return self::$__annotationReader;
 	}
 
 	/**
@@ -106,7 +111,7 @@ class Entity
 	 */
 	protected static function _getPropertyAnnotations($property, $namespace = null) {
 		$annotations = array();
-		$reader = self::getAnnotationReader();
+		$reader = self::$__annotationReader;
 
 		foreach ($reader->getPropertyAnnotations($property) as $annotation) {
 			if ($annotation instanceof $namespace) {
@@ -166,7 +171,7 @@ class Entity
 	 * @return array
 	 */
 	public function getValidatorMessages() {
-		return $this->_messages;
+		return $this->__messages;
 	}
 
 	/**
@@ -178,28 +183,41 @@ class Entity
 		self::__initialize();
 
 		$valid = true;
-		foreach (array_keys(self::getProperties()) as $property) {
-			$validatorChain = self::_getPropertyValidator($property);
+		foreach (self::$__validatable[get_called_class()] as $name => &$props) {
+			$validatorChain = &$props['chain'];
+			if (null === $validatorChain) {
+				$validatorChain = new Zend_Validate();
+				foreach ($props['annotations'] as $annotation) {
+					try {
+						Zend_Loader::loadClass($annotation->class);
+					} catch (Zend_Exception $e) {
+						throw new Zend_Exception("failed to find validator '{$annotation->class}'");
+					}
+					if (empty($annotation->value)) {
+						$validator = new $annotation->class();
+					} else {
+						$validator = new $annotation->class($annotation->value);
+					}
 
-			if (empty($validatorChain)) {
-				continue;
+					$validatorChain->addValidator($validator, $annotation->breakChain);
+				}
 			}
 
 			$objectVars = get_object_vars($this);
-			$getter = 'get' . ucfirst(self::$__filterCase->filter($property));
+			$getter = 'get' . ucfirst(self::$__filterCase->filter($name));
 			if (method_exists($this, $getter)) {
 				$value = $this->$getter();
-			} elseif (array_key_exists($property, $objectVars)) {
+			} elseif (array_key_exists($name, $objectVars)) {
 				$value = $this->$property;
 			} else {
 				throw new Zend_Exception(
-					"property '{$property}' is not public and no getter was found 
+					"field '{$name}' is not public and no getter was found 
 						- add {$getter}() perhaps?");
 			}
 
 			$amValid = $validatorChain->isValid($value);
 			if (!$amValid) {
-				$this->_messages = $validatorChain->getMessages();
+				$this->__messages = $validatorChain->getMessages();
 				$valid = false;
 			}
 		}
