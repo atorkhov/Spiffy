@@ -1,7 +1,9 @@
 <?php
-use Spiffy\Doctrine\Container;
 
-class Spiffy_Application_Resource_Spiffy extends Zend_Application_Resource_ResourceAbstract
+use Spiffy\Service\Container;
+
+class Spiffy_Application_Resource_Servicecontainer extends
+	Zend_Application_Resource_ResourceAbstract
 {
 	/**
 	 * (non-PHPdoc)
