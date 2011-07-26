@@ -68,9 +68,6 @@ class Container
 				case 'annotationfile':
 					$this->setAnnotationFile($value);
 					break;
-				default:
-					throw new Exception\InvalidOption("Option '{$key}' is not a valid option.");
-					break;
 			}
 		}
 	}
