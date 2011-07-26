@@ -1,5 +1,6 @@
 <?php
 
+use Doctrine\ORM\EntityRepository;
 use Spiffy\Form;
 
 class Spiffy_Form_Element_Entity extends Zend_Form_Element_Select
@@ -57,7 +58,7 @@ class Spiffy_Form_Element_Entity extends Zend_Form_Element_Select
 			self::$_caseFilter = new Zend_Filter_Word_UnderscoreToCamelCase();
 		}
 
-		$this->_entityManager = Form::getDefaultEntityManager();
+		$this->_entityManager = Zend_Registry::get('Spiffy_Container')->getEntityManager();
 		parent::__construct($spec, $options);
 	}
 

@@ -1,5 +1,6 @@
 <?php
 
+use Doctrine\ORM\EntityRepository;
 use Spiffy\Form;
 
 class Spiffy_Dojo_Form_Element_ComboBoxEntity extends Zend_Dojo_Form_Element_ComboBox
@@ -57,7 +58,7 @@ class Spiffy_Dojo_Form_Element_ComboBoxEntity extends Zend_Dojo_Form_Element_Com
 			self::$_caseFilter = new Zend_Filter_Word_UnderscoreToCamelCase();
 		}
 
-		$this->_entityManager = Form::getDefaultEntityManager();
+		$this->_entityManager = Zend_Registry::get('Spiffy_Container')->getEntityManager();
 		parent::__construct($spec, $options);
 	}
 

@@ -74,6 +74,12 @@ abstract class Form extends Zend_Form
 	protected $_defaultEntityManager = 'default';
 
 	/**
+	 * The Spiffy service container. Only loaded if registered.
+	 * @var Spiffy_Application_Resource_Servicecontainer
+	 */
+	protected $serviceContainer = null;
+
+	/**
 	 * Default elements for Zend_Form.
 	 * 
 	 * @var array
@@ -133,6 +139,29 @@ abstract class Form extends Zend_Form
 
 		// set entity defaults if an entity is present
 		$this->setDefaults($this->entityToArray());
+
+		// register the get helper if it exists
+		if (Zend_Registry::isRegistered('Spiffy_Service_Container')) {
+			$this->serviceContainer = Zend_Registry::get('Spiffy_Service_Container');
+		}
+	}
+
+	/**
+	 * Destructor.
+	 */
+	public function __destruct() {
+		$invalid = false;
+		foreach ($this->getElements() as $element) {
+			if ($invalid = $element->hasErrors()) {
+				break;
+			}
+		}
+
+		$invalid = ($this->isErrors() || $invalid);
+		if (!$invalid && $this->_automaticPersisting) {
+			$this->getEntityManager()->persist($this->getEntity());
+			$this->getEntityManager()->flush();
+		}
 	}
 
 	/**
@@ -294,7 +323,7 @@ abstract class Form extends Zend_Form
 	 *
 	 * @param boolean $value
 	 */
-	public function setAutomaticPersisting() {
+	public function setAutomaticPersisting($value) {
 		$this->_automaticPersisting = $value;
 	}
 
@@ -382,7 +411,7 @@ abstract class Form extends Zend_Form
 		}
 
 		if (method_exists($this->getEntity(), 'toArray')) {
-			return $this->getEntity()->toArray();
+			return $this->getEntity()->toArray(array_keys($this->getElements()));
 		}
 
 		$md = $this->getEntityMetadata();
@@ -422,9 +451,7 @@ abstract class Form extends Zend_Form
 	 * @see Zend_Form::isValid()
 	 */
 	public function isValid($data) {
-		if (($valid = parent::isValid($data)) && $this->_automaticPersisting) {
-			$this->getEntityManager()->persist($this->getEntity());
-		}
+		$valid = parent::isValid($data);
 
 		$this->setEntityDefaults($this->getValues());
 

@@ -269,13 +269,23 @@ class Model
 	/**
 	 * Convert entity to an array.
 	 * 
+	 * @param array $properties Array of fields to filter results with.
 	 * @return array
 	 */
-	public function toArray() {
+	public function toArray(array $properties = array()) {
 		static::__initialize();
 
+		if (empty($properties)) {
+			$properties = array_keys(self::$__properties[get_class($this)]);
+		}
+
 		$values = array();
-		foreach (self::$__properties[get_class($this)] as $property) {
+		foreach ($properties as $property) {
+			if (!isset(self::$__properties[get_class($this)][$property])) {
+				continue;
+			}
+
+			$property = self::$__properties[get_class($this)][$property];
 			$values[$property->name] = $this->_get($property->name);
 		}
 		return $values;
