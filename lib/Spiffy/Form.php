@@ -2,7 +2,7 @@
 namespace Spiffy;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\DBAL\Types\Type;
-use Spiffy\Doctrine\Container as Container;
+use Spiffy\Doctrine\Container as DoctrineContainer;
 use Spiffy\Dojo\Form as SpiffyDojoForm;
 use Zend_Dojo;
 use Zend_Form_Exception;
@@ -140,10 +140,8 @@ abstract class Form extends Zend_Form
 		// set entity defaults if an entity is present
 		$this->setDefaults($this->entityToArray());
 
-		// register the get helper if it exists
-		if (Zend_Registry::isRegistered('Spiffy_Service_Container')) {
-			$this->serviceContainer = Zend_Registry::get('Spiffy_Service_Container');
-		}
+		// register the service container if it's enabled
+		$this->serviceContainer = Zend_Registry::get('Spiffy_Container')->getServiceContainer();
 	}
 
 	/**
@@ -287,7 +285,7 @@ abstract class Form extends Zend_Form
 	 */
 	public function getEntityManager($emName = null) {
 		$emName = $emName ? $emName : $this->_defaultEntityManager;
-		return Container::getEntityManager($emName);
+		return DoctrineContainer::getEntityManager($emName);
 	}
 
 	/**

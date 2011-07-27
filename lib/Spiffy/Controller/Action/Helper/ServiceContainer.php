@@ -15,7 +15,7 @@ class Spiffy_Controller_Action_Helper_ServiceContainer extends
 	 * @see Zend_Controller_Action_Helper_Abstract::init()
 	 */
 	public function init() {
-		$this->serviceContainer = Zend_Registry::get('Spiffy_Service_Container');
+		$this->serviceContainer = Zend_Registry::get('Spiffy_Container')->getServiceContainer();
 	}
 
 	/**

@@ -1,163 +1,63 @@
 <?php
 
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Spiffy\Form;
 
 class Spiffy_Form_Element_Entity extends Zend_Form_Element_Select
 {
 	/**
-	 * Entity manager.
-	 *
-	 * @var Doctrine\ORM\EntityManager
-	 */
-	protected $_entityManager = null;
-
-	/**
 	 * Entity class.
-	 *
 	 * @var string
 	 */
-	protected $_class = null;
+	protected $_class;
 
 	/**
-	 * Query builder closure for fetching elements.
-	 *
-	 * @var Closure
+	 * Spiffy container.
+	 * @var Spiffy\Container
 	 */
-	protected $_queryBuilder = null;
+	protected $_spiffyContainer;
 
 	/**
-	 * Cached query result.
-	 *
-	 * @var array
+	 * Query builder.
+	 * @var Doctrine\ORM\QueryBuilder
 	 */
-	protected $_queryResult = null;
-
-	/**
-	 * Flag: autoregister inArray validator?
-	 * @var bool
-	 */
-	protected $_registerInArrayValidator = false;
-
-	/**
-	 * Case filter used for determining getters.
-	 *
-	 * @var Zend_Filter_Word_UnderscoreToCamelCase
-	 */
-	protected static $_caseFilter = null;
-
-	/**
-	 * Constructor
-	 *
-	 * @param  mixed $spec
-	 * @param  mixed $options
-	 * @return void
-	 */
-	public function __construct($spec, $options = null) {
-		if (null === self::$_caseFilter) {
-			self::$_caseFilter = new Zend_Filter_Word_UnderscoreToCamelCase();
-		}
-
-		$this->_entityManager = Zend_Registry::get('Spiffy_Container')->getEntityManager();
-		parent::__construct($spec, $options);
-	}
-
-	/**
-	 * Retrieve options array
-	 *
-	 * @return array
-	 */
-	protected function _getMultiOptions() {
-		if (null === $this->options || !is_array($this->options)) {
-			$this->options = array();
-		}
-
-		if (empty($this->options) && $this->getClass()) {
-			if (null === $this->_queryResult) {
-				$qb = call_user_func($this->getQueryBuilder(),
-					$this->_entityManager->getRepository($this->_class));
-				$this->_queryResult = $qb->getQuery()->execute();
-			}
-
-			$md = $this->_entityManager->getClassMetadata($this->_class);
-
-			foreach ($this->_queryResult as $row) {
-				if (is_array($row)) {
-					throw new Zend_Exception(
-						'formEntity expects a result of objects: did you for an array with select?');
-				}
-
-				$id = array();
-				foreach ($md->identifier as $field) {
-					$getter = 'get' . ucfirst(self::$_caseFilter->filter($field));
-					if (method_exists($row, $getter)) {
-						$value = $row->$getter();
-					} elseif (isset($this->{$key}) || property_exists($row, $key)) {
-						$value = $row->$key;
-					} else {
-						throw new Zend_Exception(
-							"property '{$field}' is not public: perhaps add {$getter}()?");
-					}
-
-					$id[] = $value;
-				}
-				$this->options[implode(':', $id)] = (string) $row;
-			}
-		}
-
-		return $this->options;
-	}
+	protected $_queryBuilder;
 
 	/**
 	 * (non-PHPdoc)
-	 * @see Zend_Form_Element::setOptions()
+	 * @see Zend_Form_Element::init()
 	 */
-	public function setOptions(array $options) {
-		if (isset($options['class'])) {
-			if (isset($options['multiOptions'])) {
-				unset($options['multiOptions']);
-			}
-
-			$this->setClass($options['class']);
-			unset($options['class']);
+	public function init() {
+		if (!Zend_Registry::isRegistered('Spiffy_Container')) {
+			throw new Zend_Form_Exception('Spiffy\Container is required when using Spiffy\Form');
 		}
 
-		if (isset($options['queryBuilder'])) {
-			$this->setQueryBuilder($options['queryBuilder']);
-			unset($options['queryBuilder']);
-		} else {
-			$qb = function (EntityRepository $er) {
-				return $er->createQueryBuilder('e');
+		if (!$this->_class) {
+			throw new Zend_Form_Element_Exception(get_class($this) . ' requires a class');
+		}
+
+		if (!$this->_queryBuilder instanceof Closure) {
+			$this->_queryBuilder = function (EntityRepository $er) {
+				return $er->createQueryBuilder('entity');
 			};
-			$this->setQueryBuilder($qb);
 		}
 
-		$this->_getMultiOptions();
-
-		parent::setOptions($options);
+		$this->_spiffyContainer = Zend_Registry::get('Spiffy_Container');
+		$this->options = $this->_spiffyContainer
+			->getMultiOptions($this->_class, $this->_queryBuilder);
 	}
 
 	/**
-	 * Set query builder.
-	 *
-	 * @param Closure $qb
+	 * Get entity class.
 	 */
-	public function setQueryBuilder(Closure $qb) {
-		$this->_queryBuilder = $qb;
-	}
-
-	/**
-	 * Get query builder.
-	 *
-	 * @return Closure
-	 */
-	public function getQueryBuilder() {
-		return $this->_queryBuilder;
+	public function getClass() {
+		return $this->_class;
 	}
 
 	/**
 	 * Set entity class.
-	 *
+	 * 
 	 * @param string $class
 	 */
 	public function setClass($class) {
@@ -165,19 +65,20 @@ class Spiffy_Form_Element_Entity extends Zend_Form_Element_Select
 	}
 
 	/**
-	 * Get entity class.
-	 *
-	 * @return string
+	 * Get query builder.
+	 * 
+	 * @return Closure
 	 */
-	public function getClass() {
-		return $this->_class;
+	public function getQueryBuilder() {
+		return $this->_queryBuilder;
 	}
 
 	/**
-	 * (non-PHPdoc)
-	 * @see Zend_Form_Element::render()
+	 * Set query builder.
+	 * 
+	 * @param Closure $qb
 	 */
-	public function render(Zend_View_Interface $view = null) {
-		return parent::render($view);
+	public function setQueryBuilder(Closure $qb) {
+		$this->_queryBuilder = $qb;
 	}
 }
