@@ -24,51 +24,50 @@ abstract class Form extends Zend_Form
 
     /**
      * Case conversion filter.
-     * 
      * @var Zend_Filter_Word_UnderscoreToCamelCase
      */
     protected static $_caseFilter = null;
 
     /**
      * Doctrine 2 annotation reader.
-     * 
      * @var Doctrine\Common\Annotations\AnnotationReader
      */
     protected static $_annotationReader = null;
 
     /**
      * Doctrine 2 entity, if any.
-     * 
      * @var object
      */
     protected $_entity = null;
 
     /**
      * flag: automatically persist valid entities?
-     *
      * @var boolean
      */
     protected $_automaticPersisting = false;
 
     /**
      * flag: use automatic filters?
-     * 
      * @var boolean
      */
     protected $_automaticFilters = true;
 
     /**
      * flag: use automatic validators?
-     * 
      * @var boolean
      */
     protected $_automaticValidators = true;
+    
+    /**
+     * flag: has the form been submitted to validation?
+     * @var boolean
+     */
+    protected $_validated = false;
 
     /**
      * The default entity manager to use in case there are multiple
      * ones available. Set this using constructor options or the
      * getDefaultOptions() method.
-     * 
      * @var string
      */
     protected $_defaultEntityManager = 'default';
@@ -81,7 +80,6 @@ abstract class Form extends Zend_Form
 
     /**
      * Default elements for Zend_Form.
-     * 
      * @var array
      */
     protected $_defaultElements = array(
@@ -147,6 +145,27 @@ abstract class Form extends Zend_Form
 
         // register the service container if it's enabled
         $this->serviceContainer = Zend_Registry::get('Spiffy_Container')->getServiceContainer();
+    }
+    
+    /**
+     * Destructor.
+     */
+    public function __destruct() 
+    {
+        if ($this->getEntity() && $this->_automaticPersisting && $this->_validated) {
+            $invalid = false;
+            foreach ($this->getElements() as $element) {
+                if ($invalid = $element->hasErrors()) {
+                    break;
+                }
+            }
+        
+            $invalid = ($this->isErrors() || $invalid);
+            if (!$invalid) {
+                $this->getEntityManager()->persist($this->getEntity());
+                $this->getEntityManager()->flush();
+            }
+        }
     }
 
     /**
@@ -456,20 +475,8 @@ abstract class Form extends Zend_Form
 
         $this->setEntityDefaults($this->getValues());
         
-        if ($this->_automaticPersisting) {
-            $invalid = false;
-            foreach ($this->getElements() as $element) {
-                if ($invalid = $element->hasErrors()) {
-                    break;
-                }
-            }
-            
-            $invalid = ($this->isErrors() || $invalid);
-            if (!$invalid) {
-                $this->getEntityManager()->persist($this->getEntity());
-                $this->getEntityManager()->flush();
-            }
-        }
+        // mark the form as validated for destructor persisting
+        $this->_validated = true;
 
         return $valid;
     }
