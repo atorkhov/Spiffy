@@ -96,10 +96,6 @@ class Model
             return false;
         }
 
-        if (null === self::$__filterCase) {
-            self::$__filterCase = new Zend_Filter_Word_UnderscoreToCamelCase();
-        }
-
         $reflClass = new ReflectionClass(get_called_class());
 
         // all properties of the class used for toArray(), fromArray(), get(), and set()
@@ -132,6 +128,16 @@ class Model
     public function __set($name, $value)
     {
         $this->_set($name, $value);
+    }
+    
+    /**
+     * Get the case filter.
+     */
+    protected static function _getCaseFilter() {
+        if (null === self::$__filterCase) {
+            self::$__filterCase = new Zend_Filter_Word_UnderscoreToCamelCase();
+        }
+        return self::$__filterCase;
     }
 
     /**
@@ -317,7 +323,7 @@ class Model
     protected function _set($name, $value)
     {
         $objectVars = get_object_vars($this);
-        $setter = 'set' . ucfirst(self::$__filterCase->filter($name));
+        $setter = 'set' . ucfirst(self::_getCaseFilter()->filter($name));
         if (method_exists($this, $setter)) {
             $this->$setter($value);
         } elseif (array_key_exists($name, $objectVars)) {
@@ -339,7 +345,7 @@ class Model
     protected function _get($name)
     {
         $objectVars = get_object_vars($this);
-        $getter = 'get' . ucfirst(self::$__filterCase->filter($name));
+        $getter = 'get' . ucfirst(self::_getCaseFilter()->filter($name));
         if (method_exists($this, $getter)) {
             $value = $this->$getter();
         } elseif (array_key_exists($name, $objectVars)) {
