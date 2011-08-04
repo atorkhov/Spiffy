@@ -173,6 +173,19 @@ abstract class Form extends Zend_Form
                     }
                 }
             }
+            
+            if ($this->getEntity()->isAutomaticValidators()) {
+                foreach($this->getEntity()->getClassValidatables() as $name => $validatable) {
+                    foreach($validatable['automatic'] as $validator) {
+                        if ($element = $this->getElement($name)) {
+                            $element->addValidator(
+                                $validator['instance'],
+                                $validator['breakChainOnFailure']
+                            );
+                        }
+                    }
+                }
+            }
         }
 
         // manual filters/validators from Spiffy\Model
@@ -180,6 +193,14 @@ abstract class Form extends Zend_Form
             foreach($filterable['chain']->getFilters() as $filter) {
                 if ($element = $this->getElement($name)) {
                     $element->addFilter($filter);
+                }
+            }
+        }
+        
+        foreach($this->getEntity()->getClassValidatables() as $name => $validatable) {
+            foreach($validatable['chain']->getValidators() as $validator) {
+                if ($element = $this->getElement($name)) {
+                    $element->addValidator($validator);
                 }
             }
         }

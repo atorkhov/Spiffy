@@ -395,7 +395,8 @@ class Model
 
         if ($automatic) {
             self::$__validatable[get_called_class()][$property]['automatic'][] = array(
-                'validator' => $validator, 'breakOnChain' => $breakChain
+                'instance' => $validator,
+                'breakChainOnFailure' => $breakChain
             );
         } else {
             self::$__validatable[get_called_class()][$property]['chain']
