@@ -45,7 +45,8 @@ class Spiffy_Dojo_Form_Element_ComboBox extends Zend_Dojo_Form_Element_ComboBox
         }
 
         $this->_spiffyContainer = Zend_Registry::get('Spiffy_Container');
-        $this->options = $this->_spiffyContainer->getMultiOptions($this->_class, $this->_queryBuilder);
+        $this->options = $this->_spiffyContainer
+            ->getMultiOptions($this->_class, $this->_queryBuilder);
     }
 
     /**

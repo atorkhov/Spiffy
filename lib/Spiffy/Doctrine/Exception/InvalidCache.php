@@ -1,8 +1,8 @@
 <?php
-namespace Spiffy\Domain\Exception;
+namespace Spiffy\Doctrine\Exception;
 use Zend_Exception;
 
-class NoGetter extends Zend_Exception
+class InvalidCache extends Zend_Exception
 {
     public function __construct($msg = '')
     {

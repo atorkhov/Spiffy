@@ -57,7 +57,7 @@ abstract class Form extends Zend_Form
      * @var boolean
      */
     protected $_automaticValidators = true;
-    
+
     /**
      * flag: has the form been submitted to validation?
      * @var boolean
@@ -146,11 +146,11 @@ abstract class Form extends Zend_Form
         // register the service container if it's enabled
         $this->serviceContainer = Zend_Registry::get('Spiffy_Container')->getServiceContainer();
     }
-    
+
     /**
      * Destructor.
      */
-    public function __destruct() 
+    public function __destruct()
     {
         if ($this->getEntity() && $this->_automaticPersisting && $this->_validated) {
             $invalid = false;
@@ -159,7 +159,7 @@ abstract class Form extends Zend_Form
                     break;
                 }
             }
-        
+
             $invalid = ($this->isErrors() || $invalid);
             if (!$invalid) {
                 $this->getEntityManager()->persist($this->getEntity());
@@ -474,7 +474,7 @@ abstract class Form extends Zend_Form
         $valid = parent::isValid($data);
 
         $this->setEntityDefaults($this->getValues());
-        
+
         // mark the form as validated for destructor persisting
         $this->_validated = true;
 

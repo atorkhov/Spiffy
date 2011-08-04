@@ -4,7 +4,8 @@ use Zend_Exception;
 
 class InvalidEntityManager extends Zend_Exception
 {
-	public function __construct($msg = '') {
-		parent::__construct($msg, 500);
-	}
+    public function __construct($msg = '')
+    {
+        parent::__construct($msg, 500);
+    }
 }
