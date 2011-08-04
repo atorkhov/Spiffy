@@ -1,6 +1,5 @@
 <?php
 namespace Spiffy\Domain;
-use Doctrine\Common\Annotations\AnnotationReader;
 use ReflectionClass;
 use Zend_Filter;
 use Zend_Filter_Word_UnderscoreToCamelCase;
@@ -9,16 +8,6 @@ use Zend_Validate;
 
 class Model
 {
-    /**
-     * @var string
-     */
-    const FILTER_NAMESPACE = 'Spiffy\\Doctrine\\Annotations\\Filters\\Filter';
-
-    /**
-     * @var string
-     */
-    const VALIDATOR_NAMESPACE = 'Spiffy\\Doctrine\\Annotations\\Validators\\Validator';
-
     /**
      * flag: should I throw exceptions when a getter is unavailable?
      * @var boolean
@@ -36,12 +25,6 @@ class Model
      * @var Zend_Filter_Word_UnderscoreToCamelCase
      */
     protected static $__filterCase = null;
-
-    /**
-     * Doctrine annotation reader
-     * @var Doctrine\Common\Annotations\AnnotationReader
-     */
-    protected static $__annotationReader = null;
 
     /**
      * ReflectionClasses.
@@ -107,11 +90,6 @@ class Model
             self::$__filterCase = new Zend_Filter_Word_UnderscoreToCamelCase();
         }
 
-        if (null === self::$__annotationReader) {
-            self::$__annotationReader = new AnnotationReader();
-        }
-
-        $reader = self::$__annotationReader;
         $reflClass = self::$__reflClass[get_called_class()] = new ReflectionClass(
             get_called_class());
 
@@ -122,92 +100,7 @@ class Model
             }
 
             self::$__properties[get_called_class()][$property->name] = $property;
-
-            if ($annotations = self::_getPropertyAnnotations($property, self::FILTER_NAMESPACE)) {
-                self::$__filterable[get_called_class()][$property->name]['chain'] = null;
-                self::$__filterable[get_called_class()][$property->name]['annotations'] = $annotations;
-            }
-
-            if ($annotations = self::_getPropertyAnnotations($property, self::VALIDATOR_NAMESPACE)) {
-                self::$__validatable[get_called_class()][$property->name]['chain'] = null;
-                self::$__validatable[get_called_class()][$property->name]['annotations'] = $annotations;
-            }
         }
-    }
-
-    /**
-     * Returns the annotations for a given property.
-    
-     * @param ReflectionClass $property
-     * @param null|string $namespace
-     */
-    protected static function _getPropertyAnnotations($property, $namespace = null)
-    {
-        $annotations = array();
-        $reader = self::$__annotationReader;
-
-        foreach ($reader->getPropertyAnnotations($property) as $annotation) {
-            if ($annotation instanceof $namespace) {
-                $annotations[] = $annotation;
-            }
-        }
-        return $annotations;
-    }
-
-    /**
-     * Returns validators for a given property.
-     * 
-     * @param string $property
-     * @return array
-     */
-    protected static function _getPropertyValidator($property)
-    {
-        static::__initialize();
-
-        if (!isset(self::$__properties[get_called_class()][$property])) {
-            throw new Zend_Exception("unable to find property by name '{$property}'");
-        }
-
-        $property = &self::$__properties[get_called_class()][$property];
-        $validatorChain = &$property['validatorChain'];
-
-        if (null === $validatorChain) {
-            $annotations = self::_getPropertyAnnotations($property['reflClass'],
-                self::VALIDATOR_NAMESPACE);
-
-            if (empty($annotations)) {
-                $validatorChain = array();
-            } else {
-                $validatorChain = new Zend_Validate();
-                foreach ($annotations as $annotation) {
-                    try {
-                        Zend_Loader::loadClass($annotation->class);
-                    } catch (Zend_Exception $e) {
-                        throw new Zend_Exception("failed to find validator '{$annotation->class}'");
-                    }
-                    if (empty($annotation->value)) {
-                        $validator = new $annotation->class();
-                    } else {
-                        $validator = new $annotation->class($annotation->value);
-                    }
-
-                    $validatorChain->addValidator($validator, $annotation->breakChain);
-                }
-            }
-        }
-
-        return $validatorChain;
-    }
-
-    /**
-     * Get the entity manager.
-     *
-     * @return Doctrine\ORM\EntityManager
-     */
-    public function getEntityManager($emName = null)
-    {
-        $emName = $emName ? $emName : $this->__defaultEntityManager;
-        return Container::getEntityManager($emName);
     }
 
     /**
@@ -235,27 +128,32 @@ class Model
         }
 
         if (isset(self::$__filterable[$self][$key])) {
-            $filterChain = &self::$__filterable[$self][$key]['chain'];
-            if (null === $filterChain) {
-                $filterChain = new Zend_Filter();
-                foreach (self::$__filterable[$self][$key]['annotations'] as $annotation) {
-                    try {
-                        Zend_Loader::loadClass($annotation->class);
-                    } catch (Zend_Exception $e) {
-                        throw new Zend_Exception("failed to find filter '{$annotation->class}'");
-                    }
-                    if (empty($annotation->value)) {
-                        $filter = new $annotation->class();
-                    } else {
-                        $filter = new $annotation->class($annotation->value);
-                    }
-
-                    $filterChain->addFilter($filter);
-                }
-            }
-            return $filterChain->filter($value);
+            return self::$__filterable[$self][$key]->filter($value);
         }
         return $value;
+    }
+
+    /**
+     * Checks the entities validity.
+     *
+     * @return boolean
+     */
+    public function isValid()
+    {
+        static::__initialize();
+
+        $valid = true;
+        foreach (self::$__validatable[get_class($this)] as $name => $validatorChain) {
+            $value = $this->_get($name);
+            $isValid = $validatorChain->isValid($value);
+
+            if (!$isValid) {
+                $this->__messages = $validatorChain->getMessages();
+                $valid = false;
+            }
+        }
+
+        return $valid;
     }
 
     /**
@@ -299,47 +197,6 @@ class Model
             $values[$property->name] = $this->_get($property->name);
         }
         return $values;
-    }
-
-    /**
-     * Checks the entities validity.
-     * 
-     * @return boolean
-     */
-    public function isValid()
-    {
-        static::__initialize();
-
-        $valid = true;
-        foreach (self::$__validatable[get_class($this)] as $name => &$props) {
-            $validatorChain = &$props['chain'];
-            if (null === $validatorChain) {
-                $validatorChain = new Zend_Validate();
-                foreach ($props['annotations'] as $annotation) {
-                    try {
-                        Zend_Loader::loadClass($annotation->class);
-                    } catch (Zend_Exception $e) {
-                        throw new Zend_Exception("failed to find validator '{$annotation->class}'");
-                    }
-                    if (empty($annotation->value)) {
-                        $validator = new $annotation->class();
-                    } else {
-                        $validator = new $annotation->class($annotation->value);
-                    }
-
-                    $validatorChain->addValidator($validator, $annotation->breakChain);
-                }
-            }
-
-            $value = $this->_get($name);
-            $amValid = $validatorChain->isValid($value);
-            if (!$amValid) {
-                $this->__messages = $validatorChain->getMessages();
-                $valid = false;
-            }
-        }
-
-        return $valid;
     }
 
     /**
@@ -389,5 +246,60 @@ class Model
         }
 
         return $value;
+    }
+
+    /**
+     * Statically adds a filter to a property.
+     *
+     * @param string $property
+     * @param string $class
+     * @param mixed $options
+     * @throws Zend_Exception
+     */
+    protected static function _addFilter($property, $class, $options)
+    {
+        if (!isset(self::$__filterable[get_called_class()][$property]) || 
+            null === self::$__filterable[get_called_class()][$property]
+        ) {
+            self::$__filterable[get_called_class()][$property] = new Zend_Filter();
+        }
+
+        try {
+            Zend_Loader::loadClass($class);
+        } catch (Zend_Exception $e) {
+            throw new Zend_Exception("failed to find filter '{$class}'");
+        }
+        
+        $filter = empty($options) ? $filter = new $class() : $filter = new $class($options); 
+
+        self::$__filterable[get_called_class()][$property]->addFilter($filter);
+    }
+
+    /**
+     * Statically adds a validator to a property.
+     *
+     * @param string $property
+     * @param string $class
+     * @param mixed $options
+     * @param boolean $breakChain
+     * @throws Zend_Exception
+     */
+    protected static function _addValidator($property, $class, $options, $breakChain = false)
+    {
+        if (!isset(self::$__validatable[get_called_class()][$property]) || 
+            null === self::$__validatable[get_called_class()][$property]
+        ) {
+            self::$__validatable[get_called_class()][$property] = new Zend_Validate();
+        }
+
+        try {
+            Zend_Loader::loadClass($class);
+        } catch (Zend_Exception $e) {
+            throw new Zend_Exception("failed to find validator '{$class}'");
+        }
+        
+        $validator = empty($options) ? $validator = new $class() : $validator = new $class($options); 
+
+        self::$__validatable[get_called_class()][$property]->addValidator($validator, $breakChain);
     }
 }
