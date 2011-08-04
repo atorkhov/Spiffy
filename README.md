@@ -42,5 +42,4 @@ extends Zend_Dojo_Form to provide additional Dojo integration. Features for both
 
 TODO
 ====
-*	Move automatic filters and validators to Spiffy\Entity.
 *	Update Spiffy\Form to pull validators/filters directly from Entity\Model.

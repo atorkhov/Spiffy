@@ -1,19 +1,19 @@
 <?php
 /**
-* Spiffy Framework
-*
-* LICENSE
-*
-* This source file is subject to the new BSD license that is bundled
-* with this package in the file LICENSE.
-* It is also available through the world-wide-web at this URL:
-* http://www.spiffyjr.me/license
-*
-* @category   Spiffy
-* @package    Spiffy_Domain
-* @copyright  Copyright (c) 2011 Kyle Spraggs (http://www.spiffyjr.me)
-* @license    http://www.spiffyjr.me/license     New BSD License
-*/
+ * Spiffy Framework
+ *
+ * LICENSE
+ *
+ * This source file is subject to the new BSD license that is bundled
+ * with this package in the file LICENSE.
+ * It is also available through the world-wide-web at this URL:
+ * http://www.spiffyjr.me/license
+ *
+ * @category   Spiffy
+ * @package    Spiffy_Domain
+ * @copyright  Copyright (c) 2011 Kyle Spraggs (http://www.spiffyjr.me)
+ * @license    http://www.spiffyjr.me/license     New BSD License
+ */
 
 namespace Spiffy\Domain;
 use ReflectionClass;
@@ -115,7 +115,7 @@ class Model
                 continue;
             }
 
-            self::$__properties[get_called_class()][$property->name] = $property;
+            self::$__properties[get_called_class()][] = $property->name;
         }
     }
 
@@ -139,12 +139,12 @@ class Model
         static::__initialize();
 
         $self = get_class($this);
-        if (!isset(self::$__properties[$self][$key])) {
+        if (!in_array($key, self::$__properties[$self])) {
             throw new Exception\InvalidProperty("no such property '{$key}' exists for '{$self}'");
         }
 
         if (isset(self::$__filterable[$self][$key])) {
-            return self::$__filterable[$self][$key]->filter($value);
+            return self::$__filterable[$self][$key]['chain']->filter($value);
         }
         return $value;
     }
@@ -159,12 +159,14 @@ class Model
         static::__initialize();
 
         $valid = true;
-        foreach (self::$__validatable[get_class($this)] as $name => $validatorChain) {
+        foreach (self::$__validatable[get_class($this)] as $name => $data) {
+            $validatorChain = $data['chain'];
+
             $value = $this->_get($name);
             $isValid = $validatorChain->isValid($value);
 
             if (!$isValid) {
-                $this->__messages = $validatorChain->getMessages();
+                $this->__messages[$name] = $validatorChain->getMessages();
                 $valid = false;
             }
         }
@@ -183,7 +185,7 @@ class Model
         static::__initialize();
 
         foreach ($data as $key => $value) {
-            if (isset(self::$__properties[get_class($this)][$key])) {
+            if (in_array($key, self::$__properties[get_class($this)])) {
                 $this->_set($key, $value);
             }
         }
@@ -193,26 +195,47 @@ class Model
      * Convert entity to an array.
      * 
      * @param array $properties Array of fields to filter results with.
+     * @param boolean $filter Whether or not to apply filtering to the result.
      * @return array
      */
-    public function toArray(array $properties = array())
+    public function toArray(array $properties = array(), $filter = true)
     {
         static::__initialize();
 
         if (empty($properties)) {
-            $properties = array_keys(self::$__properties[get_class($this)]);
+            $properties = self::$__properties[get_class($this)];
         }
 
         $values = array();
         foreach ($properties as $property) {
-            if (!isset(self::$__properties[get_class($this)][$property])) {
+            if (!in_array($property, self::$__properties[get_class($this)])) {
                 continue;
             }
 
-            $property = self::$__properties[get_class($this)][$property];
-            $values[$property->name] = $this->_get($property->name);
+            $values[$property] = $this->_get($property);
+
+            if ($filter) {
+                $values[$property] = $this->filter($property, $values[$property]);
+            }
         }
         return $values;
+    }
+
+    /**
+     * Applies filters by calling fromArray() using toArray() with filters enabled.
+     */
+    public function applyFilters()
+    {
+        $get = $this->__throwNoGetterExceptions;
+        $set = $this->__throwNoSetterExceptions;
+        
+        $this->setThrowNoGetterExceptions(false);
+        $this->setThrowNoSetterExceptions(false);
+        
+        $this->fromArray($this->toArray());
+        
+        $this->setThrowNoGetterExceptions($get);
+        $this->setThrowNoSetterExceptions($set);
     }
 
     /**
@@ -270,25 +293,32 @@ class Model
      * @param string $property
      * @param string $class
      * @param mixed $options
+     * @param boolean $automatic
      * @throws Zend_Exception
      */
-    protected static function _addFilter($property, $class, $options)
+    protected static function _addFilter($property, $class, $options = null, $automatic = false)
     {
-        if (!isset(self::$__filterable[get_called_class()][$property]) || 
-            null === self::$__filterable[get_called_class()][$property]
+        if (!isset(self::$__filterable[get_called_class()][$property])
+            || null === self::$__filterable[get_called_class()][$property]['chain']
         ) {
-            self::$__filterable[get_called_class()][$property] = new Zend_Filter();
+            self::$__filterable[get_called_class()][$property]['chain'] = new Zend_Filter();
         }
 
-        try {
+        try
+        {
             Zend_Loader::loadClass($class);
-        } catch (Zend_Exception $e) {
+        } catch (Zend_Exception $e)
+        {
             throw new Zend_Exception("failed to find filter '{$class}'");
         }
-        
-        $filter = empty($options) ? $filter = new $class() : $filter = new $class($options); 
 
-        self::$__filterable[get_called_class()][$property]->addFilter($filter);
+        $filter = empty($options) ? $filter = new $class() : $filter = new $class($options);
+
+        if ($automatic) {
+            self::$__filterable[get_called_class()][$property]['automatic'][] = $filter;
+        } else {
+            self::$__filterable[get_called_class()][$property]['chain']->addFilter($filter);
+        }
     }
 
     /**
@@ -298,24 +328,35 @@ class Model
      * @param string $class
      * @param mixed $options
      * @param boolean $breakChain
+     * @param boolean $automatic
      * @throws Zend_Exception
      */
-    protected static function _addValidator($property, $class, $options, $breakChain = false)
+    protected static function _addValidator($property, $class, $options = null, $breakChain = false,
+        $automatic = false)
     {
-        if (!isset(self::$__validatable[get_called_class()][$property]) || 
-            null === self::$__validatable[get_called_class()][$property]
+        if (!isset(self::$__validatable[get_called_class()][$property])
+            || null === self::$__validatable[get_called_class()][$property]['chain']
         ) {
-            self::$__validatable[get_called_class()][$property] = new Zend_Validate();
+            self::$__validatable[get_called_class()][$property]['chain'] = new Zend_Validate();
         }
 
-        try {
+        try
+        {
             Zend_Loader::loadClass($class);
-        } catch (Zend_Exception $e) {
+        } catch (Zend_Exception $e)
+        {
             throw new Zend_Exception("failed to find validator '{$class}'");
         }
-        
-        $validator = empty($options) ? $validator = new $class() : $validator = new $class($options); 
 
-        self::$__validatable[get_called_class()][$property]->addValidator($validator, $breakChain);
+        $validator = empty($options) ? $validator = new $class() : $validator = new $class($options);
+
+        if ($automatic) {
+            self::$__validatable[get_called_class()][$property]['automatic'][] = array(
+                'validator' => $validator, 'breakOnChain' => $breakChain
+            );
+        } else {
+            self::$__validatable[get_called_class()][$property]['chain']
+                ->addValidator($validator, $breakChain);
+        }
     }
 }
