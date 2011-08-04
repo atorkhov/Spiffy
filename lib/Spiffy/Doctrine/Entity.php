@@ -204,7 +204,7 @@ class Entity extends Model
         }
 
         if (isset(self::$__filterable[$self][$key])) {
-            $filterChain = self::$__filterable[$self][$key]['chain'];
+            $filterChain = clone self::$__filterable[$self][$key]['chain'];
 
             if ($this->isAutomaticFilters() && isset(self::$__filterable[$self][$key]['automatic'])) {
                 foreach (self::$__filterable[$self][$key]['automatic'] as $filter) {
@@ -228,7 +228,7 @@ class Entity extends Model
 
         $valid = true;
         foreach (self::$__validatable[get_class($this)] as $name => $data) {
-            $validatorChain = $data['chain'];
+            $validatorChain = clone $data['chain'];
 
             if ($this->isAutomaticValidators() && isset($data['automatic'])) {
                 foreach ($data['automatic'] as $automatic) {
