@@ -1,0 +1,15 @@
+parameters:
+  # Zend Layout
+  layout.factory.class: Spiffy\Service\Factory\Layout
+  
+  # Zend View
+  view.factory.class: Spiffy\Service\Factory\View
+  
+services:
+  layout:
+    factory_class: %layout.factory.class%
+    factory_method: get
+    
+  view:
+    factory_class: %view.factory.class%
+    factory_method: get
