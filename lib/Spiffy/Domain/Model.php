@@ -37,7 +37,7 @@ class Model
     protected $__throwNoSetterExceptions = true;
 
     /**
-     * CamelCase Filter 
+     * CamelCase Filter
      * @var Zend_Filter_Word_UnderscoreToCamelCase
      */
     protected static $__filterCase = null;
@@ -84,7 +84,7 @@ class Model
 
     /**
      * Set throwNoSetterExceptions.
-     * 
+     *
      * @param boolean $value
      */
     public function setThrowNoSetterExceptions($value)
@@ -99,15 +99,14 @@ class Model
     protected static function __initialize()
     {
         if (isset(self::$__properties[get_called_class()])) {
-            return;
+            return false;
         }
 
         if (null === self::$__filterCase) {
             self::$__filterCase = new Zend_Filter_Word_UnderscoreToCamelCase();
         }
 
-        $reflClass = self::$__reflClass[get_called_class()] = new ReflectionClass(
-            get_called_class());
+        $reflClass = self::$__reflClass[get_called_class()] = new ReflectionClass(get_called_class());
 
         // all properties of the class used for toArray(), fromArray(), get(), and set()
         foreach ($reflClass->getProperties() as $property) {
@@ -115,8 +114,41 @@ class Model
                 continue;
             }
 
-            self::$__properties[get_called_class()][] = $property->name;
+            self::$__properties[get_called_class()][$property->name] = $property->name;
         }
+    }
+
+    /**
+     * Gets a class property.
+     *
+     * @param string $property
+     * @return string
+     */
+    public static function getClassProperty($property)
+    {
+        $self = get_called_class();
+        if (!self::classPropertyExists($property)) {
+            throw new Exception\InvalidProperty("no such property '{$property}' exists for '{$self}'");
+        }
+        return self::$__properties[$self][$property];
+    }
+
+    /**
+     * Checks if a class property exists.
+     *
+     * @param string $property
+     * @throws Exception\InvalidProperty
+     */
+    public static function classPropertyExists($property)
+    {
+        static::__initialize();
+
+        $self = get_called_class();
+        if (!array_key_exists($property, self::$__properties[$self])) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -131,7 +163,7 @@ class Model
 
     /**
      * Generic getter that applies filtering.
-     * 
+     *
      * @param string $key
      */
     public function filter($key, $value)
@@ -139,7 +171,7 @@ class Model
         static::__initialize();
 
         $self = get_class($this);
-        if (!in_array($key, self::$__properties[$self])) {
+        if (!self::classPropertyExists($key)) {
             throw new Exception\InvalidProperty("no such property '{$key}' exists for '{$self}'");
         }
 
@@ -176,7 +208,7 @@ class Model
 
     /**
      * Set entity values from an array.
-     * 
+     *
      * @param array $data
      * @return void
      */
@@ -193,7 +225,7 @@ class Model
 
     /**
      * Convert entity to an array.
-     * 
+     *
      * @param array $properties Array of fields to filter results with.
      * @param boolean $filter Whether or not to apply filtering to the result.
      * @return array
@@ -203,15 +235,15 @@ class Model
         static::__initialize();
 
         if (empty($properties)) {
-            $properties = self::$__properties[get_class($this)];
+            $properties = array_keys(self::$__properties[get_class($this)]);
         }
-
+        
         $values = array();
         foreach ($properties as $property) {
-            if (!in_array($property, self::$__properties[get_class($this)])) {
+            if (!self::classPropertyExists($property)) {
                 continue;
             }
-
+            
             $values[$property] = $this->_get($property);
 
             if ($filter) {
@@ -228,12 +260,12 @@ class Model
     {
         $get = $this->__throwNoGetterExceptions;
         $set = $this->__throwNoSetterExceptions;
-        
+
         $this->setThrowNoGetterExceptions(false);
         $this->setThrowNoSetterExceptions(false);
-        
+
         $this->fromArray($this->toArray());
-        
+
         $this->setThrowNoGetterExceptions($get);
         $this->setThrowNoSetterExceptions($set);
     }
@@ -263,7 +295,7 @@ class Model
 
     /**
      * Generic getter.
-     * 
+     *
      * @param string $name
      * @throws Exception\NoGetter
      * @return mixed
@@ -299,7 +331,7 @@ class Model
     protected static function _addFilter($property, $class, $options = null, $automatic = false)
     {
         if (!isset(self::$__filterable[get_called_class()][$property])
-            || null === self::$__filterable[get_called_class()][$property]['chain']
+        || null === self::$__filterable[get_called_class()][$property]['chain']
         ) {
             self::$__filterable[get_called_class()][$property]['chain'] = new Zend_Filter();
         }
@@ -332,10 +364,10 @@ class Model
      * @throws Zend_Exception
      */
     protected static function _addValidator($property, $class, $options = null, $breakChain = false,
-        $automatic = false)
+    $automatic = false)
     {
         if (!isset(self::$__validatable[get_called_class()][$property])
-            || null === self::$__validatable[get_called_class()][$property]['chain']
+        || null === self::$__validatable[get_called_class()][$property]['chain']
         ) {
             self::$__validatable[get_called_class()][$property]['chain'] = new Zend_Validate();
         }
@@ -356,7 +388,7 @@ class Model
             );
         } else {
             self::$__validatable[get_called_class()][$property]['chain']
-                ->addValidator($validator, $breakChain);
+            ->addValidator($validator, $breakChain);
         }
     }
 }

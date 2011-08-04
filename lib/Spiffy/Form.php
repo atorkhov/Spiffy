@@ -47,19 +47,19 @@ abstract class Form extends Zend_Form
      * @var array
      */
     protected $_defaultElements = array(
-        Type::SMALLINT => 'text',
-        Type::BIGINT => 'text',
-        Type::INTEGER => 'text',
-        Type::BOOLEAN => 'checkbox',
-        Type::DATE => 'text',
-        Type::DATETIME => 'text',
-        Type::DATETIMETZ => 'text',
-        Type::DECIMAL => 'text',
-        Type::OBJECT => null,
-        Type::TARRAY => null,
-        Type::STRING => 'text',
-        Type::TEXT => 'textarea',
-        Type::TIME => 'text'
+    Type::SMALLINT => 'text',
+    Type::BIGINT => 'text',
+    Type::INTEGER => 'text',
+    Type::BOOLEAN => 'checkbox',
+    Type::DATE => 'text',
+    Type::DATETIME => 'text',
+    Type::DATETIMETZ => 'text',
+    Type::DECIMAL => 'text',
+    Type::OBJECT => null,
+    Type::TARRAY => null,
+    Type::STRING => 'text',
+    Type::TEXT => 'textarea',
+    Type::TIME => 'text'
     );
 
     /**
@@ -73,19 +73,19 @@ abstract class Form extends Zend_Form
     {
         // spiffy class prefixes
         $this->addPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator', 'decorator')
-            ->addPrefixPath('Spiffy_Form_Element', 'Spiffy/Form/Element', 'element')
-            ->addElementPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator', 'decorator')
-            ->addDisplayGroupPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator')
-            ->setDefaultDisplayGroupClass('Spiffy_Form_DisplayGroup');
+        ->addPrefixPath('Spiffy_Form_Element', 'Spiffy/Form/Element', 'element')
+        ->addElementPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator', 'decorator')
+        ->addDisplayGroupPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator')
+        ->setDefaultDisplayGroupClass('Spiffy_Form_DisplayGroup');
 
         // enable view helpers
         $this->getView()->addHelperPath('Spiffy/View/Helper', 'Spiffy_View_Helper');
 
         /*
-         * Set the entity prior to loading options in case there's a default 
-         * entity set. This way, the entity called on construction overwrites 
-         * the entity set in getDefaultOptions().
-         */
+         * Set the entity prior to loading options in case there's a default
+        * entity set. This way, the entity called on construction overwrites
+        * the entity set in getDefaultOptions().
+        */
         if ($entity) {
             $this->setEntity($entity);
         }
@@ -134,18 +134,19 @@ abstract class Form extends Zend_Form
             throw new Zend_Form_Exception('add() can only be used with a set entity');
         }
 
-        $md = $this->getEntityMetadata();
-        if ($columnType = $md->getTypeOfField($name)) {
-            $fieldMapping = $md->getFieldMapping($name);
-            $refProperty = $md->getReflectionProperty($name);
+        // automatic type guessing if using Spiffy\Doctrine\Entity
+        if ($this->getEntity() instanceof \Spiffy\Doctrine\Entity) {
+            if ($this->getEntity()->classPropertyExists($name)) {
+                $mdata = $this->getEntity()->getClassProperty($name);
 
-            if (!isset($options['label'])) {
-                $options['label'] = ucfirst($name);
+                if (null === $element && isset($this->_defaultElements[$mdata['type']])) {
+                    $element = $this->_defaultElements[$mdata['type']];
+                }
             }
+        }
 
-            if (null === $element && isset($this->_defaultElements[$columnType])) {
-                $element = $this->_defaultElements[$columnType];
-            }
+        if (!isset($options['label'])) {
+            $options['label'] = ucfirst($name);
         }
 
         if (!$element) {
@@ -154,6 +155,14 @@ abstract class Form extends Zend_Form
         }
 
         parent::addElement($element, $name, $options);
+
+
+        // automatic filters/validators from Spiffy\Doctrine\Entity
+        if ($this->getEntity() instanceof \Spiffy\Doctrine\Entity) {
+
+        }
+
+        // add filters/validators from Spiffy\Model
     }
 
     /**
@@ -168,7 +177,7 @@ abstract class Form extends Zend_Form
 
     /**
      * Getter for entity.
-     * 
+     *
      * @return object
      */
     public function getEntity()
@@ -178,7 +187,7 @@ abstract class Form extends Zend_Form
 
     /**
      * Setter for entity.
-     * 
+     *
      * @param string|object $entity
      */
     public function setEntity($entity)
@@ -190,12 +199,13 @@ abstract class Form extends Zend_Form
         } else {
             throw new Zend_Form_Exception('Unknown input for setEntity()');
         }
+
         $this->_entity = $entity;
     }
 
     /**
      * Gets the default options for the form.
-     * 
+     *
      * @return array
      */
     public function getDefaultOptions()

@@ -18,6 +18,7 @@
 namespace Spiffy\Doctrine;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\DBAL\Types\Type;
+use Spiffy\Domain\Exception\InvalidProperty;
 use Spiffy\Domain\Model;
 use Spiffy\Doctrine\Container;
 use Zend_Registry;
@@ -39,11 +40,11 @@ class Entity extends Model
      * @var Doctrine\Common\Annotations\AnnotationReader
      */
     protected static $__annotationReader = null;
-    
+
     /**
-    * flag: enable automatic filter?
-    * @var boolean
-    */
+     * flag: enable automatic filter?
+     * @var boolean
+     */
     protected $__automaticFilters = true;
 
     /**
@@ -58,7 +59,9 @@ class Entity extends Model
      */
     protected static function __initialize()
     {
-        parent::__initialize();
+        if (false === parent::__initialize()) {
+            return false;
+        }
 
         if (null === self::$__annotationReader) {
             self::$__annotationReader = new AnnotationReader();
@@ -76,6 +79,7 @@ class Entity extends Model
 
             if (isset($metadata->fieldMappings[$property->name])) {
                 $fieldMapping = $metadata->fieldMappings[$property->name];
+                self::$__properties[get_called_class()][$property->name] = $fieldMapping;
 
                 // automatic filters
                 switch ($fieldMapping['type']) {
@@ -96,14 +100,14 @@ class Entity extends Model
                 // automatic validators
                 if (false === $fieldMapping['nullable']) {
                     self::_addValidator($property->name, 'Zend_Validate_NotEmpty', null, false,
-                        true);
+                    true);
                 }
 
                 switch ($fieldMapping['type']) {
                     case Type::STRING:
                         if ($fieldMapping['length']) {
                             self::_addValidator($property->name, 'Zend_Validate_StringLength',
-                                array('max' => $fieldMapping['length']), false, true);
+                            array('max' => $fieldMapping['length']), false, true);
                         }
                         break;
                 }
@@ -120,7 +124,7 @@ class Entity extends Model
             if ($annotations = self::_getPropertyAnnotations($property, self::VALIDATOR_NAMESPACE)) {
                 foreach ($annotations as $annotation) {
                     self::_addValidator($property->name, $annotation->class, $annotation->value,
-                        $annotation->breakChain);
+                    $annotation->breakChain);
                 }
             }
         }
@@ -128,7 +132,7 @@ class Entity extends Model
 
     /**
      * Returns the annotations for a given property.
-    
+
      * @param ReflectionClass $property
      * @param null|string $namespace
      */
@@ -167,7 +171,7 @@ class Entity extends Model
 
     /**
      * Enable or disable automatic validators.
-     * 
+     *
      * @param boolean $flag
      */
     public function setAutomaticValidators($flag)
@@ -177,7 +181,7 @@ class Entity extends Model
 
     /**
      * Are automatic validators enabled?
-     * 
+     *
      * @return boolean
      */
     public function isAutomaticValidators()
@@ -195,8 +199,8 @@ class Entity extends Model
         static::__initialize();
 
         $self = get_class($this);
-        if (!in_array($key, self::$__properties[$self])) {
-            throw new Exception\InvalidProperty("no such property '{$key}' exists for '{$self}'");
+        if (!self::classPropertyExists($key)) {
+            throw new InvalidProperty("no such property '{$key}' exists for '{$self}'");
         }
 
         if (isset(self::$__filterable[$self][$key])) {
@@ -214,7 +218,7 @@ class Entity extends Model
 
     /**
      * Validation checker with optional automatic validators.
-     * 
+     *
      * @todo Should I handle associationMappings?
      * @return boolean
      */
@@ -229,7 +233,7 @@ class Entity extends Model
             if ($this->isAutomaticValidators() && isset($data['automatic'])) {
                 foreach ($data['automatic'] as $automatic) {
                     $validatorChain
-                        ->addValidator($automatic['validator'], $automatic['breakOnChain']);
+                    ->addValidator($automatic['validator'], $automatic['breakOnChain']);
                 }
             }
 
