@@ -43,12 +43,6 @@ class Model
     protected static $__filterCase = null;
 
     /**
-     * ReflectionClasses.
-     * @var array
-     */
-    protected static $__reflClass = array();
-
-    /**
      * Array of propertie sfor use with toArray, fromArray, get, and set.
      * @var array
      */
@@ -106,7 +100,7 @@ class Model
             self::$__filterCase = new Zend_Filter_Word_UnderscoreToCamelCase();
         }
 
-        $reflClass = self::$__reflClass[get_called_class()] = new ReflectionClass(get_called_class());
+        $reflClass = new ReflectionClass(get_called_class());
 
         // all properties of the class used for toArray(), fromArray(), get(), and set()
         foreach ($reflClass->getProperties() as $property) {
@@ -388,7 +382,7 @@ class Model
         if (!isset(self::$__validatable[get_called_class()][$property]) || 
             null === self::$__validatable[get_called_class()][$property]['chain']
         ) {
-            self::$__validatable[get_called_class()][$property]['chain'] = new Zend_Validate();
+            self::$__validatable[get_called_class()][$property]['chain'] = new \Spiffy\Validate();
         }
 
         try  {

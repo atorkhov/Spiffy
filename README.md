@@ -14,11 +14,13 @@ Spiffy\Domain\Model
 -------------------
 This class provides a base domain model with filter, validation, and helper methods.
 
-* 	Additional features are lazy loaded and only initialized if used. This keeps the entities fast when necessary.
+* 	Additional features are lazy loaded and only initialized if used. This keeps things fast when necessary.
 *   Filterable
 *   Validatable
 *   Includes a toArray() and fromArray() method.
 *   Can be used with Spiffy\Form to provide model based filters/validators.
+
+For more information see docs/model.md.
 
 Spiffy\Entity
 -------------
@@ -31,6 +33,8 @@ your entities have several new features:
 *	Automatic validators include: Zend_Validate_StringLength for string fields and Zend_Validate_NotEmpty (required = true) for fields that are not nullable.
 *	Automatic filters include: Zend_Filter_Int for bigint, smallint, and integer. Zend_Filter_Boolean for boolean. Zend_Filter_StringTrim for string.
 
+For more information see docs/entity.md.
+
 Spiffy\Form & Spiffy\Dojo\Form
 ------------------------------
 This class provides additional form generation features by extending the Zend_Form base class. Spiffy\Dojo\Form
@@ -41,6 +45,8 @@ extends Zend_Dojo_Form to provide additional Dojo integration. Features for both
 *	Optional automatic persistance of Doctrine 2 entities when the form is valid.
 *	Additional form elements for Entity, ComboBox, and FilteringSelect.
 
+For more information see docs/form.md.
+
 TODO
 ====
-*	Update Spiffy\Form to pull validators/filters directly from Entity\Model.
+*	Bug fixes, the never-ending TODO.
