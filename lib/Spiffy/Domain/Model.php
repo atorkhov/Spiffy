@@ -111,6 +111,28 @@ class Model
             self::$__properties[get_called_class()][$property->name] = $property->name;
         }
     }
+    
+    /**
+     * Magic getter (boo! don't use me!)
+     * 
+     * @param string $name
+     * @return mixed
+     */
+    public function __get($name) 
+    {
+        return $this->_get($name);    
+    }
+    
+    /**
+    * Magic setter (boo! don't use me!)
+    *
+    * @param string $name
+    * @param mixed $value
+    */
+    public function __set($name, $value)
+    {
+        $this->_set($name, $value);
+    }
 
     /**
      * Gets a class property.
