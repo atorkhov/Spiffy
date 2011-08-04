@@ -207,6 +207,46 @@ class Container
         }
         return $this->_entityManagers[$emName];
     }
+    
+    /**
+    * Gets multi options for Spiffy form elements.
+    *
+    * @param string $entityClass
+    * @param Closure $qbClosure
+    * @param string $emName
+    * @return array
+    */
+    public function getMultiOptions($entityClass, Closure $qbClosure, $emName = null)
+    {
+        if (null === $this->doctrineContainer) {
+            throw new Exception\DoctrineContainerRequired(
+                    'Doctrine container is required for this method');
+        }
+    
+        $options = array();
+    
+        $entityManager = $this->getDoctrineContainer()->getEntityManager($emName);
+        $mdata = $entityManager->getClassMetadata($entityClass);
+        $repository = $entityManager->getRepository($entityClass);
+    
+        $qb = call_user_func($qbClosure, $repository);
+        foreach ($qb->getQuery()->execute() as $row) {
+            if (!is_object($row)) {
+                throw new Exception\InvalidResult('row result must be an object');
+            }
+    
+            $id = $mdata->getIdentifierValues($row);
+            if (count($mdata->getIdentifier()) > 1) {
+                $id = serialize($id);
+            } else {
+                $id = current($id);
+            }
+    
+            $options[$id] = (string) $row;
+        }
+    
+        return $options;
+    }
 
     /**
      * Prepares a cache instance.
