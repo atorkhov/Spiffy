@@ -47,19 +47,19 @@ abstract class Form extends Zend_Form
      * @var array
      */
     protected $_defaultElements = array(
-    Type::SMALLINT => 'text',
-    Type::BIGINT => 'text',
-    Type::INTEGER => 'text',
-    Type::BOOLEAN => 'checkbox',
-    Type::DATE => 'text',
-    Type::DATETIME => 'text',
-    Type::DATETIMETZ => 'text',
-    Type::DECIMAL => 'text',
-    Type::OBJECT => null,
-    Type::TARRAY => null,
-    Type::STRING => 'text',
-    Type::TEXT => 'textarea',
-    Type::TIME => 'text'
+        Type::SMALLINT => 'text',
+        Type::BIGINT => 'text',
+        Type::INTEGER => 'text',
+        Type::BOOLEAN => 'checkbox',
+        Type::DATE => 'text',
+        Type::DATETIME => 'text',
+        Type::DATETIMETZ => 'text',
+        Type::DECIMAL => 'text',
+        Type::OBJECT => null,
+        Type::TARRAY => null,
+        Type::STRING => 'text',
+        Type::TEXT => 'textarea',
+        Type::TIME => 'text'
     );
 
     /**
@@ -73,10 +73,10 @@ abstract class Form extends Zend_Form
     {
         // spiffy class prefixes
         $this->addPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator', 'decorator')
-        ->addPrefixPath('Spiffy_Form_Element', 'Spiffy/Form/Element', 'element')
-        ->addElementPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator', 'decorator')
-        ->addDisplayGroupPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator')
-        ->setDefaultDisplayGroupClass('Spiffy_Form_DisplayGroup');
+             ->addPrefixPath('Spiffy_Form_Element', 'Spiffy/Form/Element', 'element')
+             ->addElementPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator', 'decorator')
+             ->addDisplayGroupPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator')
+             ->setDefaultDisplayGroupClass('Spiffy_Form_DisplayGroup');
 
         // enable view helpers
         $this->getView()->addHelperPath('Spiffy/View/Helper', 'Spiffy_View_Helper');
@@ -134,6 +134,10 @@ abstract class Form extends Zend_Form
             throw new Zend_Form_Exception('add() can only be used with a set entity');
         }
 
+        if (!$this->getEntity() instanceof \Spiffy\Domain\Model) {
+            throw new Zend_Form_Exception('Entity must be an instance of Spiffy\Domain\Model');
+        }
+
         // automatic type guessing if using Spiffy\Doctrine\Entity
         if ($this->getEntity() instanceof \Spiffy\Doctrine\Entity) {
             if ($this->getEntity()->classPropertyExists($name)) {
@@ -145,6 +149,7 @@ abstract class Form extends Zend_Form
             }
         }
 
+        // automatic label adder
         if (!isset($options['label'])) {
             $options['label'] = ucfirst($name);
         }
@@ -154,15 +159,30 @@ abstract class Form extends Zend_Form
                 "element type was not specified for '{$name}' and could not be guessed");
         }
 
+        // create the element
         parent::addElement($element, $name, $options);
-
 
         // automatic filters/validators from Spiffy\Doctrine\Entity
         if ($this->getEntity() instanceof \Spiffy\Doctrine\Entity) {
-
+            if ($this->getEntity()->isAutomaticFilters()) {
+                foreach($this->getEntity()->getClassFilterables() as $name => $filterable) {
+                    foreach($filterable['automatic'] as $filter) {
+                        if ($element = $this->getElement($name)) {
+                            $element->addFilter($filter);
+                        }
+                    }
+                }
+            }
         }
 
-        // add filters/validators from Spiffy\Model
+        // manual filters/validators from Spiffy\Model
+        foreach($this->getEntity()->getClassFilterables() as $name => $filterable) {
+            foreach($filterable['chain']->getFilters() as $filter) {
+                if ($element = $this->getElement($name)) {
+                    $element->addFilter($filter);
+                }
+            }
+        }
     }
 
     /**
@@ -222,7 +242,9 @@ abstract class Form extends Zend_Form
         $valid = parent::isValid($data);
 
         // populate entity
-        $this->getEntity()->fromArray($this->getValues());
+        if ($this->getEntity()) {
+            $this->getEntity()->fromArray($this->getValues());
+        }
 
         // mark the form as validated for destructor persisting
         $this->_validated = true;

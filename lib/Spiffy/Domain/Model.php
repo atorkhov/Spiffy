@@ -134,6 +134,26 @@ class Model
     }
 
     /**
+     * Gets class filterables (initialized filter chains).
+     * 
+     * @return array
+     */
+    public static function getClassFilterables()
+    {
+        return self::$__filterable[get_called_class()];
+    }
+    
+    /**
+    * Gets class validatables (initialized validator chains).
+    *
+    * @return array
+    */
+    public static function getClassValidatables()
+    {
+        return self::$__validatable[get_called_class()];
+    }
+    
+    /**
      * Checks if a class property exists.
      *
      * @param string $property
@@ -237,13 +257,13 @@ class Model
         if (empty($properties)) {
             $properties = array_keys(self::$__properties[get_class($this)]);
         }
-        
+
         $values = array();
         foreach ($properties as $property) {
             if (!self::classPropertyExists($property)) {
                 continue;
             }
-            
+
             $values[$property] = $this->_get($property);
 
             if ($filter) {
@@ -330,17 +350,15 @@ class Model
      */
     protected static function _addFilter($property, $class, $options = null, $automatic = false)
     {
-        if (!isset(self::$__filterable[get_called_class()][$property])
-        || null === self::$__filterable[get_called_class()][$property]['chain']
+        if (!isset(self::$__filterable[get_called_class()][$property]) || 
+            null === self::$__filterable[get_called_class()][$property]['chain']
         ) {
             self::$__filterable[get_called_class()][$property]['chain'] = new Zend_Filter();
         }
 
-        try
-        {
+        try {
             Zend_Loader::loadClass($class);
-        } catch (Zend_Exception $e)
-        {
+        } catch (Zend_Exception $e) {
             throw new Zend_Exception("failed to find filter '{$class}'");
         }
 
@@ -364,19 +382,18 @@ class Model
      * @throws Zend_Exception
      */
     protected static function _addValidator($property, $class, $options = null, $breakChain = false,
-    $automatic = false)
+        $automatic = false
+    )
     {
-        if (!isset(self::$__validatable[get_called_class()][$property])
-        || null === self::$__validatable[get_called_class()][$property]['chain']
+        if (!isset(self::$__validatable[get_called_class()][$property]) || 
+            null === self::$__validatable[get_called_class()][$property]['chain']
         ) {
             self::$__validatable[get_called_class()][$property]['chain'] = new Zend_Validate();
         }
 
-        try
-        {
+        try  {
             Zend_Loader::loadClass($class);
-        } catch (Zend_Exception $e)
-        {
+        } catch (Zend_Exception $e) {
             throw new Zend_Exception("failed to find validator '{$class}'");
         }
 
@@ -388,7 +405,7 @@ class Model
             );
         } else {
             self::$__validatable[get_called_class()][$property]['chain']
-            ->addValidator($validator, $breakChain);
+                ->addValidator($validator, $breakChain);
         }
     }
 }

@@ -232,8 +232,10 @@ class Entity extends Model
 
             if ($this->isAutomaticValidators() && isset($data['automatic'])) {
                 foreach ($data['automatic'] as $automatic) {
-                    $validatorChain
-                    ->addValidator($automatic['validator'], $automatic['breakOnChain']);
+                    $validatorChain->addValidator(
+                        $automatic['validator'],
+                        $automatic['breakOnChain']
+                    );
                 }
             }
 

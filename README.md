@@ -14,6 +14,7 @@ Spiffy\Domain\Model
 -------------------
 This class provides a base domain model with filter, validation, and helper methods.
 
+* 	Additional features are lazy loaded and only initialized if used. This keeps the entities fast when necessary.
 *   Filterable
 *   Validatable
 *   Includes a toArray() and fromArray() method.
