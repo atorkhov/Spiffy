@@ -37,7 +37,7 @@ class Spiffy_Application_Resource_Doctrine extends Zend_Application_Resource_Res
                         'metadata' => 'default', 'query' => 'default', 'result' => 'default'
                     ),
                     'mdata' => array(
-                        'annotation' => array(
+                        'registry' => array(
                             'files' => array(
                                 'Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php',
                                 'Spiffy/Doctrine/Annotations/Filters/Filter.php',

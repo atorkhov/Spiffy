@@ -267,6 +267,46 @@ class Container
             $driver = new $driverClass($driverOptions['paths']);
         }
 
+        // register annotations
+        if (isset($emOptions['mdata']['registry'])) {
+            $regOptions = $emOptions['mdata']['registry'];
+
+            // files
+            if (isset($regOptions['files'])) {
+                if (!is_array($regOptions['files'])) {
+                    $regOptions['files'] = array(
+                        $regOptions['files']
+                    );
+                }
+
+                // sanity check
+                if (!is_array($regOptions['files'])) {
+                    throw new Exception\InvalidRegistryFile(
+                        'Registry files must be an array of files');
+                }
+
+                foreach ($regOptions['files'] as $file) {
+                    AnnotationRegistry::registerFile($file);
+                }
+            }
+
+            // namespaces
+            if (isset($regOptions['namespaces'])) {
+                if (!is_array($regOptions['namespaces'])) {
+                    $regOptions['namespaces'] = array(
+                        $regOptions['namespaces']
+                    );
+                }
+
+                if (!is_array($regOptions['namespaces'])) {
+                    throw new Exception\InvalidRegistryNamespace(
+                        'Registry namespaces must be an array of key => value pairs');
+                }
+
+                AnnotationRegistry::registerAutoloadNamespaces($regOptions['namespaces']);
+            }
+        }
+
         $config = new Configuration();
         $config->setProxyDir($emOptions['proxy']['dir']);
         $config->setProxyNamespace($emOptions['proxy']['namespace']);
