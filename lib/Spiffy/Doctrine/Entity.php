@@ -18,6 +18,7 @@
 namespace Spiffy\Doctrine;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\DBAL\Types\Type;
+use ReflectionClass;
 use Spiffy\Domain\Exception\InvalidProperty;
 use Spiffy\Domain\Model;
 use Spiffy\Doctrine\Container;
@@ -249,5 +250,47 @@ class Entity extends Model
         }
 
         return $valid;
+    }
+    
+    /**
+     * Convert entity to an array.
+     *
+     * @param array $properties Array of fields to filter results with.
+     * @param boolean $filter Whether or not to apply filtering to the result.
+     * @return array
+     */
+    public function toArray(array $properties = array(), $filter = true)
+    {
+        static::__initialize();
+
+        if (empty($properties)) {
+            $properties = array_keys(self::$__properties[get_class($this)]);
+        }
+
+        $values = array();
+        foreach ($properties as $property) {
+            if (!self::classPropertyExists($property)) {
+                continue;
+            }
+
+            $value = $this->_get($property);
+            
+            if (is_object($value)) {
+                $reflClass = new ReflectionClass($value);
+                if ($reflClass->implementsInterface('Doctrine\ORM\Proxy\Proxy')) {
+                    continue;
+                } else if ($value instanceof Entity) {
+                    $value = $value->toArray();
+                }
+            }
+            
+            
+            $values[$property] = $value;
+
+            if ($filter) {
+                $values[$property] = $this->filter($property, $values[$property]);
+            }
+        }
+        return $values;
     }
 }
