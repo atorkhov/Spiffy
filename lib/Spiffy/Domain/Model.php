@@ -100,7 +100,7 @@ class Model
 
         // all properties of the class used for toArray(), fromArray(), get(), and set()
         foreach ($reflClass->getProperties() as $property) {
-            if (substr($property->name, 0, 2) == '__') {
+            if ($property->name[0] == '_') {
                 continue;
             }
 
