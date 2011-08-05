@@ -12,7 +12,8 @@ class Spiffy_Application_Resource_Service extends Zend_Application_Resource_Reso
      * @var array
      */
     protected $_options = array(
-        'autoloadHelpers' => true,
+        'autoloadActionHelpers' => true,
+    	'autoloadViewHelpers' => true,
         'paths' => array(
             '/configs'
         ),
@@ -20,12 +21,20 @@ class Spiffy_Application_Resource_Service extends Zend_Application_Resource_Reso
     );
     
     /**
-    * Array of helpers to autoload.
+    * Array of action helpers to autoload.
     * @var array
     */
-    protected $helpers = array(
+    protected $_actionHelpers = array(
         'Spiffy_Controller_Action_Helper_ServiceContainer', 
         'Spiffy_Controller_Action_Helper_Get'
+    );
+    
+    /**
+    * Array of view helpers to autoload.
+    * @var array
+    */
+    protected $_viewHelpers = array(
+        'get' => 'Spiffy_View_Helper_Get' 
     );
 
     /**
@@ -34,7 +43,19 @@ class Spiffy_Application_Resource_Service extends Zend_Application_Resource_Reso
      */
     public function init()
     {
-        $container = $this->getServiceContainer($this->getOptions());
+        $options = $this->getOptions();
+        
+        if ($options['autoloadActionHelpers']) {
+            $this->_registerActionHelpers();
+            unset($options['autoloadActionHelpers']);
+        }
+        
+        if ($options['autoloadViewHelpers']) {
+            $this->_registerViewHelpers();
+            unset($options['autoloadViewHelpers']);
+        }
+        
+        $container = $this->getServiceContainer($options);
 
         Zend_Registry::set('Spiffy_Service', $container);
 
@@ -64,21 +85,29 @@ class Spiffy_Application_Resource_Service extends Zend_Application_Resource_Reso
         $loader = new YamlFileLoader($container, $locator);
         $loader->load($options['file']);
 
-        if ($options['autoloadHelpers']) {
-            $this->_registerHelpers();
-        }
-
         return $container;
     }
     
     /**
     * Register action helpers.
     */
-    protected function _registerHelpers()
+    protected function _registerActionHelpers()
     {
-        foreach ($this->helpers as $helperClass) {
-            $helper = new $helperClass();
-            Zend_Controller_Action_HelperBroker::addHelper($helper);
+        foreach ($this->_actionHelpers as $helperClass) {
+            Zend_Controller_Action_HelperBroker::addHelper(new $helperClass());
+        }
+    }
+    
+    /**
+    * Register action helpers.
+    */
+    protected function _registerViewHelpers()
+    {
+        $this->_bootstrap->bootstrap('view');
+        $view = $this->_bootstrap->getResource('view');
+
+        foreach ($this->_viewHelpers as $helper => $helperClass) {
+            $view->registerHelper(new $helperClass(), $helper);
         }
     }
 }
