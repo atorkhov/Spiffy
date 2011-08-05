@@ -40,6 +40,12 @@ class Container
      * @var string
      */
     protected static $_defaultConnectionKey = 'default';
+    
+    /**
+    * Default event manager key.
+    * @var string
+    */
+    protected static $_defaultEventManagerKey = 'default';
 
     /**
      * Default entity manager key.
@@ -58,6 +64,12 @@ class Container
      * @var array
      */
     protected $_connections = array();
+    
+    /**
+    * EventManager instances.
+    * @var array
+    */
+    protected $_eventManagers = array();
 
     /**
      * EntityManager instances.
@@ -119,6 +131,26 @@ class Container
     public static function getDefaultConnectionKey()
     {
         return self::$_defaultConnectionKey;
+    }
+    
+    /**
+    * Set default event manager key.
+    *
+    * @param string $key
+    */
+    public static function setDefaultEventManagerKey($key)
+    {
+        self::$_defaultEventManagerKey = $key;
+    }
+    
+    /**
+     * Get default event manager key.
+     *
+     * @param string $key
+     */
+    public static function getDefaultEventManagerKey()
+    {
+        return self::$_defaultEventManagerKey;
     }
 
     /**
@@ -191,6 +223,22 @@ class Container
             $this->_prepareConnection($conName);
         }
         return $this->_connections[$conName];
+    }
+    
+    /**
+    * Get an event manager instance.
+    *
+    * @param string $emName
+    * @return Doctrine\Common\EventManager
+    */
+    public function getEventManager($evName = null)
+    {
+        $evName = $evName ? $evName : self::getDefaultEventManagerKey();
+    
+        if (!isset($this->_eventManagers[$evName])) {
+            $this->_prepareEventManager($evName);
+        }
+        return $this->_eventManagers[$evName];
     }
 
     /**
@@ -278,7 +326,38 @@ class Container
         }
 
         $conOptions = $this->_options['dbal']['connection'][$conName];
-        $this->_connections[$conName] = DriverManager::getConnection($conOptions);
+        $this->_connections[$conName] = DriverManager::getConnection(
+            $conOptions,
+            null,
+            $this->getEventManager(
+                $this->_options['dbal']['connection'][$conName]['eventManager']
+            )
+        );
+    }
+    
+    /**
+     * Prepares an eveent manager instance.
+     * 
+     * @param string $evName
+     */
+    protected function _prepareEventManager($evName)
+    {
+        if (!isset($this->_options['evm'][$evName])) {
+            throw new Exception\InvalidEventManager(
+                "EventManager with index '{$evName}' could not be located.");
+        }
+        
+        $evmOptions = $this->_options['evm'][$evName];
+        
+        $evm = new EventManager();
+        if (isset($evmOptions['subscribers']) && is_array($evmOptions['subscribers'])) {
+            foreach($evmOptions['subscribers'] as $subscriber) {
+                $instance = new $subscriber();
+                $evm->addEventSubscriber($instance);
+            }
+        }
+        
+        $this->_eventManagers[$evName] = $evm;
     }
 
     /**

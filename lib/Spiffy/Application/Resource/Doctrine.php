@@ -22,6 +22,7 @@ class Spiffy_Application_Resource_Doctrine extends Zend_Application_Resource_Res
     protected $_options = array(
         'defaultCacheKey' => 'default',
         'defaultConnectionKey' => 'default',
+        'defaultEventManagerKey' => 'default',
         'defaultEntityManagerKey' => 'default',
         'cache' => array(
             'default' => array(
@@ -30,9 +31,16 @@ class Spiffy_Application_Resource_Doctrine extends Zend_Application_Resource_Res
                 )
             )
         ),
+        'evm' => array(
+            'default' => array(
+                'class' => 'Doctrine\Common\EventManager',
+                'subscribers' => array()
+            )
+        ),
         'dbal' => array(
             'connection' => array(
                 'default' => array(
+                    'eventManager' => 'default',
                     'dbname' => '',
                     'user' => 'root',
                     'password' => '',
