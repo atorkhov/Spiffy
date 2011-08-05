@@ -21,6 +21,7 @@ use Spiffy\Dojo\Form as SpiffyDojoForm;
 use Zend_Dojo;
 use Zend_Form_Exception;
 use Zend_Form;
+use Zend_Registry;
 
 abstract class Form extends Zend_Form
 {
@@ -35,7 +36,7 @@ abstract class Form extends Zend_Form
      * @var boolean
      */
     protected $_automaticPersisting = false;
-
+    
     /**
      * flag: has the form been submitted to validation?
      * @var boolean
@@ -89,7 +90,7 @@ abstract class Form extends Zend_Form
         if ($entity) {
             $this->setEntity($entity);
         }
-
+        
         // assemble form
         $options = array_merge(is_array($options) ? $options : array(), $this->getDefaultOptions());
         parent::__construct($options);
@@ -97,7 +98,7 @@ abstract class Form extends Zend_Form
         // set entity defaults if an entity is present
         $this->setDefaults($this->getEntity()->toArray());
     }
-
+    
     /**
      * Destructor.
      */
@@ -207,6 +208,19 @@ abstract class Form extends Zend_Form
                 }
             }
         }
+    }
+    
+    /**
+     * Quick access to services if registered.
+     * 
+     * @param string $service
+     */
+    public function get($service)
+    {
+        if (Zend_Registry::isRegistered('Spiffy_Service')) {
+            return Zend_Registry::get('Spiffy_Service')->get($service);
+        }
+        throw new Zend_Form_Exception('Spiffy_Service is not registered');
     }
 
     /**
