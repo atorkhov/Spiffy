@@ -104,6 +104,10 @@ abstract class Form extends Zend_Form
      */
     public function __destruct()
     {
+        if (!Zend_Registry::isRegistered('Spiffy_Service')) {
+            return;
+        }
+        
         if ($this->getEntity() && $this->_automaticPersisting && $this->_validated) {
             $invalid = false;
             foreach ($this->getElements() as $element) {
@@ -114,8 +118,9 @@ abstract class Form extends Zend_Form
 
             $invalid = ($this->isErrors() || $invalid);
             if (!$invalid) {
-                $this->getEntityManager()->persist($this->getEntity());
-                $this->getEntityManager()->flush();
+                $doctrine = $this->get('doctrine');
+                $doctrine->getEntityManager()->persist($this->getEntity());
+                $doctrine->getEntityManager()->flush();
             }
         }
     }

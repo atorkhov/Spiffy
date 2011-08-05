@@ -259,7 +259,7 @@ class Model
         static::__initialize();
 
         foreach ($data as $key => $value) {
-            if (in_array($key, self::$__properties[get_class($this)])) {
+            if (self::classPropertyExists($key)) {
                 $this->_set($key, $value);
             }
         }
