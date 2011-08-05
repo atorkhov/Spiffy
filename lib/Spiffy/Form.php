@@ -96,7 +96,9 @@ abstract class Form extends Zend_Form
         parent::__construct($options);
 
         // set entity defaults if an entity is present
-        $this->setDefaults($this->getEntity()->toArray());
+        if ($this->getEntity()) {
+            $this->setDefaults($this->getEntity()->toArray());
+        }
     }
     
     /**
