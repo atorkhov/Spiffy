@@ -64,6 +64,7 @@ class Spiffy_ZFDebug_Doctrine2 extends ZFDebug_Controller_Plugin_Debug_Plugin
         if (!$this->_em)
             return 'No entity managers';
 
+        $adapterInfo = array();
         foreach ($this->_em as $em) {
             if ($logger = $em->getConnection()->getConfiguration()->getSqlLogger()) {
                 $totalTime = 0;
@@ -73,7 +74,11 @@ class Spiffy_ZFDebug_Doctrine2 extends ZFDebug_Controller_Plugin_Debug_Plugin
                 $adapterInfo[] = count($logger->queries) . ' in ' . round($totalTime * 1000, 2) . ' ms';
             }
         }
-        $html = implode(' / ', $adapterInfo);
+        if (empty($adapterInfo)) {
+            $html = 'No logger enabled';
+        } else {
+            $html = implode(' / ', $adapterInfo);
+        }
 
         return $html;
     }
@@ -100,7 +105,7 @@ class Spiffy_ZFDebug_Doctrine2 extends ZFDebug_Controller_Plugin_Debug_Plugin
                 }
                 $html .= '</ol>';
             } else {
-                $html .= "No logger enabled!";
+                $html .= "No logger enabled";
             }
         }
 
