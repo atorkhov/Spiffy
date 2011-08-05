@@ -17,6 +17,7 @@
 
 namespace Spiffy\Doctrine;
 
+use Closure;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\EventManager;
@@ -218,14 +219,9 @@ class Container
     */
     public function getMultiOptions($entityClass, Closure $qbClosure, $emName = null)
     {
-        if (null === $this->doctrineContainer) {
-            throw new Exception\DoctrineContainerRequired(
-                    'Doctrine container is required for this method');
-        }
-    
         $options = array();
     
-        $entityManager = $this->getDoctrineContainer()->getEntityManager($emName);
+        $entityManager = $this->getEntityManager($emName);
         $mdata = $entityManager->getClassMetadata($entityClass);
         $repository = $entityManager->getRepository($entityClass);
     
@@ -244,7 +240,7 @@ class Container
     
             $options[$id] = (string) $row;
         }
-    
+        
         return $options;
     }
 
@@ -368,12 +364,19 @@ class Container
         $config->setProxyNamespace($emOptions['proxy']['namespace']);
         $config->setAutoGenerateProxyClasses($emOptions['proxy']['autoGenerate']);
         $config->setMetadataDriverImpl($driver);
-
+        
         $config->setMetadataCacheImpl($this->getCache($emOptions['cache']['metadata']));
         $config->setQueryCacheImpl($this->getCache($emOptions['cache']['query']));
         $config->setResultCacheImpl($this->getCache($emOptions['cache']['result']));
 
         $em = EntityManager::create($this->getConnection($connection), $config);
+        
+        if (isset($emOptions['logger']['class'])) {
+            $dbalConfig = $em->getConnection()->getConfiguration();
+            
+            $logger = new $emOptions['logger']['class']();
+            $dbalConfig->setSqlLogger($logger);
+        }
 
         $this->_entityManagers[$emName] = $em;
     }

@@ -28,9 +28,9 @@ class Spiffy_Dojo_Form_Element_ComboBox extends Zend_Dojo_Form_Element_ComboBox
 
     /**
      * Spiffy container.
-     * @var Spiffy\Container
+     * @var Spiffy\Doctrine\Container
      */
-    protected $_spiffyContainer;
+    protected $_doctrine;
 
     /**
      * Query builder.
@@ -44,8 +44,8 @@ class Spiffy_Dojo_Form_Element_ComboBox extends Zend_Dojo_Form_Element_ComboBox
      */
     public function init()
     {
-        if (!Zend_Registry::isRegistered('Spiffy_Container')) {
-            throw new Zend_Form_Exception('Spiffy\Container is required when using Spiffy\Form');
+        if (!Zend_Registry::isRegistered('Spiffy_Doctrine')) {
+            throw new Zend_Form_Exception('Spiffy\Doctrine\Container is required when using ComboBox');
         }
 
         if (!$this->_class) {
@@ -59,9 +59,8 @@ class Spiffy_Dojo_Form_Element_ComboBox extends Zend_Dojo_Form_Element_ComboBox
             };
         }
 
-        $this->_spiffyContainer = Zend_Registry::get('Spiffy_Container');
-        $this->options = $this->_spiffyContainer
-            ->getMultiOptions($this->_class, $this->_queryBuilder);
+        $this->_doctrine = Zend_Registry::get('Spiffy_Doctrine');
+        $this->options = $this->_doctrine->getMultiOptions($this->_class, $this->_queryBuilder);
     }
 
     /**
