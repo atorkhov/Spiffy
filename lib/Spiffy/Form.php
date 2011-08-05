@@ -200,7 +200,10 @@ abstract class Form extends Zend_Form
         foreach($this->getEntity()->getClassValidatables() as $name => $validatable) {
             foreach($validatable['chain']->getValidators() as $validator) {
                 if ($element = $this->getElement($name)) {
-                    $element->addValidator($validator);
+                    $element->addValidator(
+                        $validator['instance'],
+                        $validator['breakChainOnFailure']
+                    );
                 }
             }
         }
