@@ -283,8 +283,10 @@ class Entity extends Model
                         $value = $unserialized;
                     }
                     
-                    $em = Zend_Registry::get('Spiffy_Doctrine')->getEntityManager();
-                    $value = $em->getReference($mdata['targetEntity'], $value);
+                    if (!empty($value)) {
+                        $em = Zend_Registry::get('Spiffy_Doctrine')->getEntityManager();
+                        $value = $em->getReference($mdata['targetEntity'], $value);
+                    }
                 }
                 
                 $this->_set($key, $value);
