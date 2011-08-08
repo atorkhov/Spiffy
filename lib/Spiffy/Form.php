@@ -154,6 +154,10 @@ abstract class Form extends Zend_Form
                 if (null === $element && isset($this->_defaultElements[$mdata['type']])) {
                     $element = $this->_defaultElements[$mdata['type']];
                 }
+                
+                if (!$mdata['nullable']) {
+                    $options['required'] = true;
+                }
             }
         }
 
