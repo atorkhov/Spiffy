@@ -15,7 +15,7 @@
 * @license    http://www.spiffyjr.me/license     New BSD License
 */
 
-class Spiffy_Dojo_Form_Element_FilteringSelect extends Spiffy_Dojo_Form_Element_ComboBox
+class Spiffy_Dojo_Form_Element_FilteringSelectEntity extends Spiffy_Dojo_Form_Element_ComboBoxEntity
 {
     /**
      * Use formSelect view helper by default

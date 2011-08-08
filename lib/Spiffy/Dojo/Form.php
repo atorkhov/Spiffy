@@ -41,7 +41,7 @@ abstract class Form extends SpiffyForm
         Type::STRING => 'TextBox',
         Type::TEXT => 'Textarea',
         Type::TIME => 'TimeTextBox',
-        'TO_ONE' => 'FilteringSelect'
+        'TO_ONE' => 'FilteringSelectEntity'
     );
 
     /**

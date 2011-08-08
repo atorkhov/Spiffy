@@ -62,7 +62,7 @@ abstract class Form extends Zend_Form
         Type::STRING => 'text',
         Type::TEXT => 'textarea',
         Type::TIME => 'text',
-        'TO_ONE' => 'select'
+        'TO_ONE' => 'entity'
     );
 
     /**

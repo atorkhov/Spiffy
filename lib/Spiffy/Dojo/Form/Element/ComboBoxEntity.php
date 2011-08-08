@@ -18,7 +18,7 @@
 use Doctrine\ORM\EntityRepository;
 use Spiffy\Form;
 
-class Spiffy_Dojo_Form_Element_ComboBox extends Zend_Dojo_Form_Element_ComboBox
+class Spiffy_Dojo_Form_Element_ComboBoxEntity extends Zend_Dojo_Form_Element_ComboBox
 {
     /**
      * Entity class.
@@ -58,7 +58,6 @@ class Spiffy_Dojo_Form_Element_ComboBox extends Zend_Dojo_Form_Element_ComboBox
                 return $er->createQueryBuilder('entity');
             };
         }
-
         $this->_doctrine = Zend_Registry::get('Spiffy_Doctrine');
         $this->options = $this->_doctrine->getMultiOptions($this->_class, $this->_queryBuilder);
     }
