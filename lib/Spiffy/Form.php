@@ -17,6 +17,7 @@
 
 namespace Spiffy;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Spiffy\Dojo\Form as SpiffyDojoForm;
 use Zend_Dojo;
 use Zend_Form_Exception;
@@ -60,7 +61,8 @@ abstract class Form extends Zend_Form
         Type::TARRAY => null,
         Type::STRING => 'text',
         Type::TEXT => 'textarea',
-        Type::TIME => 'text'
+        Type::TIME => 'text',
+        'TO_ONE' => 'select'
     );
 
     /**
@@ -155,11 +157,16 @@ abstract class Form extends Zend_Form
             if ($this->getEntity()->classPropertyExists($name)) {
                 $mdata = $this->getEntity()->getClassProperty($name);
 
-                if (null === $element && isset($this->_defaultElements[$mdata['type']])) {
-                    $element = $this->_defaultElements[$mdata['type']];
+                if (null === $element) {
+                    if ($mdata['type'] & ClassMetadataInfo::TO_ONE) {
+                        $element = $this->_defaultElements['TO_ONE'];
+                        $options['class'] = $mdata['targetEntity'];
+                    } elseif (isset($this->_defaultElements[$mdata['type']])) {
+                        $element = $this->_defaultElements[$mdata['type']];
+                    }
                 }
                 
-                if ($mdata['type'] != 'boolean' && !$mdata['nullable']) {
+                if (isset($mdata['nullable']) && $mdata['type'] != 'boolean' && !$mdata['nullable']) {
                     $options['required'] = true;
                 }
             }

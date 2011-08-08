@@ -279,14 +279,7 @@ class Container
                 throw new Exception\InvalidResult('row result must be an object');
             }
     
-            $id = $mdata->getIdentifierValues($row);
-            if (count($mdata->getIdentifier()) > 1) {
-                $id = serialize($id);
-            } else {
-                $id = current($id);
-            }
-    
-            $options[$id] = (string) $row;
+            $options[serialize($mdata->getIdentifierValues($row))] = (string) $row;
         }
         
         return $options;

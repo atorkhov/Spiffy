@@ -18,6 +18,7 @@
 namespace Spiffy\Doctrine;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use ReflectionClass;
 use Spiffy\Domain\Exception\InvalidProperty;
 use Spiffy\Domain\Model;
@@ -77,13 +78,19 @@ class Entity extends Model
             if (substr($property->name, 0, 2) == '__') {
                 continue;
             }
-
+            
+            $mdata = null;
             if (isset($metadata->fieldMappings[$property->name])) {
-                $fieldMapping = $metadata->fieldMappings[$property->name];
-                self::$__properties[get_called_class()][$property->name] = $fieldMapping;
+                $mdata = $metadata->fieldMappings[$property->name];
+            } elseif (isset($metadata->associationMappings[$property->name])) {
+                $mdata = $metadata->associationMappings[$property->name];
+            }
+            
+            if ($mdata) {
+                self::$__properties[get_called_class()][$property->name] = $mdata;
 
                 // automatic filters
-                switch ($fieldMapping['type']) {
+                switch ($mdata['type']) {
                     case Type::SMALLINT:
                     case Type::INTEGER:
                     case Type::BIGINT:
@@ -99,7 +106,7 @@ class Entity extends Model
                 }
 
                 // automatic validators
-                if (false === $fieldMapping['nullable'] && $fieldMapping['type'] != Type::BOOLEAN) {
+                if (isset($mdata['nullable']) && !$mdata['nullable'] && $mdata['type'] != Type::BOOLEAN) {
                     self::_addValidator(
                         $property->name,
                         'Zend_Validate_NotEmpty', 
@@ -109,11 +116,11 @@ class Entity extends Model
                     );
                 }
 
-                switch ($fieldMapping['type']) {
+                switch ($mdata['type']) {
                     case Type::STRING:
-                        if ($fieldMapping['length']) {
+                        if ($mdata['length']) {
                             self::_addValidator($property->name, 'Zend_Validate_StringLength',
-                            array('max' => $fieldMapping['length']), false, true);
+                            array('max' => $mdata['length']), false, true);
                         }
                         break;
                 }
@@ -255,6 +262,34 @@ class Entity extends Model
         }
 
         return $valid;
+    }
+    
+    /**
+    * Set entity values from an array.
+    *
+    * @param array $data
+    * @return void
+    */
+    public function fromArray(array $data)
+    {
+        static::__initialize();
+    
+        foreach ($data as $key => $value) {
+            if (self::classPropertyExists($key)) {
+                $mdata = $this->getClassProperty($key);
+                
+                if (isset($mdata['type']) && $mdata['type'] & ClassMetadataInfo::TO_ONE) {
+                    if (false !== ($unserialized = @unserialize($value))) {
+                        $value = $unserialized;
+                    }
+                    
+                    $em = Zend_Registry::get('Spiffy_Doctrine')->getEntityManager();
+                    $value = $em->getReference($mdata['targetEntity'], $value);
+                }
+                
+                $this->_set($key, $value);
+            }
+        }
     }
     
     /**
