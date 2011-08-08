@@ -99,9 +99,14 @@ class Entity extends Model
                 }
 
                 // automatic validators
-                if (false === $fieldMapping['nullable']) {
-                    self::_addValidator($property->name, 'Zend_Validate_NotEmpty', null, false,
-                    true);
+                if (false === $fieldMapping['nullable'] && $fieldMapping['type'] != Type::BOOLEAN) {
+                    self::_addValidator(
+                        $property->name,
+                        'Zend_Validate_NotEmpty', 
+                        null, 
+                        false,
+                        true
+                    );
                 }
 
                 switch ($fieldMapping['type']) {

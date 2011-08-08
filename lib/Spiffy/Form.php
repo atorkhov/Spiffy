@@ -84,15 +84,19 @@ abstract class Form extends Zend_Form
 
         /*
          * Set the entity prior to loading options in case there's a default
-        * entity set. This way, the entity called on construction overwrites
-        * the entity set in getDefaultOptions().
-        */
+         * entity set. This way, the entity called on construction overwrites
+         * the entity set in getDefaultOptions().
+         */
+        $defaultOptions = $this->getDefaultOptions();
         if ($entity) {
             $this->setEntity($entity);
+            if (isset($defaultOptions['entity'])) {
+                unset($defaultOptions['entity']);
+            }
         }
         
         // assemble form
-        $options = array_merge(is_array($options) ? $options : array(), $this->getDefaultOptions());
+        $options = array_merge(is_array($options) ? $options : array(), $defaultOptions);
         parent::__construct($options);
 
         // set entity defaults if an entity is present
@@ -155,7 +159,7 @@ abstract class Form extends Zend_Form
                     $element = $this->_defaultElements[$mdata['type']];
                 }
                 
-                if (!$mdata['nullable']) {
+                if ($mdata['type'] != 'boolean' && !$mdata['nullable']) {
                     $options['required'] = true;
                 }
             }
