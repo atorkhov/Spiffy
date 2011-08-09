@@ -144,16 +144,8 @@ abstract class Form extends Zend_Form
      */
     public function add($name, $element = null, $options = null)
     {
-        if (!$this->getEntity()) {
-            throw new Zend_Form_Exception('add() can only be used with a set entity');
-        }
-
-        if (!$this->getEntity() instanceof \Spiffy\Domain\Model) {
-            throw new Zend_Form_Exception('Entity must be an instance of Spiffy\Domain\Model');
-        }
-
         // automatic type guessing if using Spiffy\Doctrine\Entity
-        if ($this->getEntity() instanceof \Spiffy\Doctrine\Entity) {
+        if ($this->getEntity() && $this->getEntity() instanceof \Spiffy\Doctrine\Entity) {
             if ($this->getEntity()->classPropertyExists($name)) {
                 $mdata = $this->getEntity()->getClassProperty($name);
 
@@ -184,6 +176,10 @@ abstract class Form extends Zend_Form
 
         // create the element
         parent::addElement($element, $name, $options);
+        
+        if (!$this->getEntity()) {
+            return;
+        }
 
         // automatic filters/validators from Spiffy\Doctrine\Entity
         if ($this->getEntity() instanceof \Spiffy\Doctrine\Entity) {

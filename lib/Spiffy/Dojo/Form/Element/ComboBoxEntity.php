@@ -15,7 +15,6 @@
 * @license    http://www.spiffyjr.me/license     New BSD License
 */
 
-use Doctrine\ORM\EntityRepository;
 use Spiffy\Form;
 
 class Spiffy_Dojo_Form_Element_ComboBoxEntity extends Zend_Dojo_Form_Element_ComboBox
@@ -34,7 +33,7 @@ class Spiffy_Dojo_Form_Element_ComboBoxEntity extends Zend_Dojo_Form_Element_Com
 
     /**
      * Query builder.
-     * @var Doctrine\ORM\QueryBuilder
+     * @var Closure
      */
     protected $_queryBuilder;
 
@@ -52,12 +51,6 @@ class Spiffy_Dojo_Form_Element_ComboBoxEntity extends Zend_Dojo_Form_Element_Com
             throw new Zend_Form_Element_Exception(get_class($this) . ' requires a class');
         }
 
-        if (!$this->_queryBuilder instanceof Closure) {
-            $this->_queryBuilder = function (EntityRepository $er)
-            {
-                return $er->createQueryBuilder('entity');
-            };
-        }
         $this->_doctrine = Zend_Registry::get('Spiffy_Doctrine');
         $this->options = $this->_doctrine->getMultiOptions($this->_class, $this->_queryBuilder);
     }

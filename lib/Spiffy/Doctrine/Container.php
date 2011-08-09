@@ -261,12 +261,19 @@ class Container
     * Gets multi options for Spiffy form elements.
     *
     * @param string $entityClass
-    * @param Closure $qbClosure
+    * @param Closure|null $qbClosure
     * @param string $emName
     * @return array
     */
-    public function getMultiOptions($entityClass, Closure $qbClosure, $emName = null)
+    public function getMultiOptions($entityClass, $qbClosure = null, $emName = null)
     {
+        if (!$qbClosure instanceof Closure) {
+            $qbClosure = function (EntityRepository $er)
+            {
+                return $er->createQueryBuilder('entity');
+            };
+        }
+        
         $options = array();
     
         $entityManager = $this->getEntityManager($emName);

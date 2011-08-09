@@ -15,8 +15,6 @@
 * @license    http://www.spiffyjr.me/license     New BSD License
 */
 
-use Doctrine\ORM\EntityRepository;
-use Doctrine\ORM\QueryBuilder;
 use Spiffy\Form;
 
 class Spiffy_Form_Element_Entity extends Zend_Form_Element_Select
@@ -35,7 +33,7 @@ class Spiffy_Form_Element_Entity extends Zend_Form_Element_Select
 
     /**
      * Query builder.
-     * @var Doctrine\ORM\QueryBuilder
+     * @var Closure
      */
     protected $_queryBuilder;
 
@@ -53,12 +51,6 @@ class Spiffy_Form_Element_Entity extends Zend_Form_Element_Select
             throw new Zend_Form_Element_Exception(get_class($this) . ' requires a class');
         }
 
-        if (!$this->_queryBuilder instanceof Closure) {
-            $this->_queryBuilder = function (EntityRepository $er)
-            {
-                return $er->createQueryBuilder('entity');
-            };
-        }
         $this->_doctrine = Zend_Registry::get('Spiffy_Doctrine');
         $this->options = $this->_doctrine->getMultiOptions($this->_class, $this->_queryBuilder);
     }
