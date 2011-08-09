@@ -284,8 +284,10 @@ class Entity extends Model
                     }
                     
                     if (!empty($value)) {
-                        $em = Zend_Registry::get('Spiffy_Doctrine')->getEntityManager();
-                        $value = $em->getReference($mdata['targetEntity'], $value);
+                        if (is_numeric($value)) {
+                            $em = Zend_Registry::get('Spiffy_Doctrine')->getEntityManager();
+                            $value = $em->getReference($mdata['targetEntity'], $value);
+                        }
                     }
                 }
                 
