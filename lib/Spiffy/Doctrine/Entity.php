@@ -303,7 +303,7 @@ class Entity extends Model
      * @param boolean $filter Whether or not to apply filtering to the result.
      * @return array
      */
-    public function toArray(array $properties = array(), $filter = true)
+    public function toArray(array $properties = array(), $filter = true, $loadEntities = false)
     {
         static::__initialize();
 
@@ -323,7 +323,7 @@ class Entity extends Model
                 $reflClass = new ReflectionClass($value);
                 if ($reflClass->implementsInterface('Doctrine\ORM\Proxy\Proxy')) {
                     continue;
-                } else if ($value instanceof Entity) {
+                } else if ($value instanceof Entity && $loadEntities) {
                     $value = $value->toArray();
                 }
             }
