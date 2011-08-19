@@ -59,9 +59,7 @@ abstract class Form extends SpiffyForm
             ->addPrefixPath('Spiffy_Dojo_Form_Decorator', 'Spiffy/Dojo/Form/Decorator', 'decorator')
             ->addPrefixPath('Spiffy_Dojo_Form_Element', 'Spiffy/Dojo/Form/Element', 'element')
             ->addElementPrefixPath('Spiffy_Dojo_Form_Decorator', 'Spiffy/Dojo/Form/Decorator',
-                'decorator')
-            ->addDisplayGroupPrefixPath('Spiffy_Dojo_Form_Decorator', 'Spiffy/Dojo/Form/Decorator')
-            ->setDefaultDisplayGroupClass('Spiffy_Dojo_Form_DisplayGroup');
+                'decorator');
 
         // enable dojo view helpers
         $this->getView()->addHelperPath('Spiffy/Dojo/View/Helper', 'Spiffy_Dojo_View_Helper');

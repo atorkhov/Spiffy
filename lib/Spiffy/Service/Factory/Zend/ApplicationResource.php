@@ -30,6 +30,10 @@ class ApplicationResource
         $front = Zend_Controller_Front::getInstance();
         $bootstrap = $front->getParam('bootstrap');
         
-        return $bootstrap->getResource($key);
+        if ($bootstrap->hasResource($key)) {
+        	return $bootstrap->getResource($key);
+        }
+        
+        return null;
     }   
 }

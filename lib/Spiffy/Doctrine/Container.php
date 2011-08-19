@@ -268,7 +268,7 @@ class Container
     public function getMultiOptions($entityClass, $qbClosure = null, $emName = null)
     {
         if (!$qbClosure instanceof Closure) {
-            $qbClosure = function (EntityRepository $er)
+            $qbClosure = function ($er)
             {
                 return $er->createQueryBuilder('entity');
             };

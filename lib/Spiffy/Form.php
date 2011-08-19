@@ -77,9 +77,7 @@ abstract class Form extends Zend_Form
         // spiffy class prefixes
         $this->addPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator', 'decorator')
              ->addPrefixPath('Spiffy_Form_Element', 'Spiffy/Form/Element', 'element')
-             ->addElementPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator', 'decorator')
-             ->addDisplayGroupPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator')
-             ->setDefaultDisplayGroupClass('Spiffy_Form_DisplayGroup');
+             ->addElementPrefixPath('Spiffy_Form_Decorator', 'Spiffy/Form/Decorator', 'decorator');
 
         // enable view helpers
         $this->getView()->addHelperPath('Spiffy/View/Helper', 'Spiffy_View_Helper');
