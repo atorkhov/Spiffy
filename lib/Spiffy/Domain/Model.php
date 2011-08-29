@@ -330,8 +330,7 @@ class Model
             $this->$name = $value;
         } elseif ($this->__throwNoSetterExceptions) {
             throw new Exception\NoSetter(
-                "field '{$name}' is not accessible and no setter was found 
-						- add {$setter}() perhaps?");
+                "field '{$name}' is not accessible and no setter was found");
         }
     }
 
@@ -352,8 +351,7 @@ class Model
             $value = $this->$name;
         } elseif ($this->__throwNoGetterExceptions) {
             throw new Exception\NoGetter(
-                "field '{$name}' is not accessible and no getter was found 
-					- add {$getter}() perhaps?");
+                "field '{$name}' is not accessible and no getter was found");
         } else {
             $value = null;
         }

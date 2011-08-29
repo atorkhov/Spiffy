@@ -320,14 +320,20 @@ class Entity extends Model
             $value = $this->_get($property);
             
             if (is_object($value)) {
-                $reflClass = new ReflectionClass($value);
-                if ($reflClass->implementsInterface('Doctrine\ORM\Proxy\Proxy')) {
+                $skip = false;
+                switch(get_class($value)) {
+                    case 'DateTime':
+                        $value = $value->format('r');
+                        break;
+                    default:
+                        $skip = true;
+                        break;
+                }
+                
+                if ($skip) {
                     continue;
-                } else if ($value instanceof Entity && $loadEntities) {
-                    $value = $value->toArray();
                 }
             }
-            
             
             $values[$property] = $value;
 

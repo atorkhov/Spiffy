@@ -1,13 +1,20 @@
 parameters:
-  # Zend Layout
+  front.factory.class: Spiffy\Service\Factory\Front
   layout.factory.class: Spiffy\Service\Factory\Layout
-  
-  # Zend View
+  session.factory.class: Spiffy\Service\Factory\Session
   view.factory.class: Spiffy\Service\Factory\View
   
 services:
+  front:
+    factory_class: %front.factory.class%
+    factory_method: get
+    
   layout:
     factory_class: %layout.factory.class%
+    factory_method: get
+    
+  session:
+    factory_class: %session.factory.class%
     factory_method: get
     
   view:
