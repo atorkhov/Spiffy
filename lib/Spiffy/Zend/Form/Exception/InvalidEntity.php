@@ -15,10 +15,10 @@
 * @license    http://www.spiffyjr.me/license     New BSD License
 */
 
-namespace Spiffy\Doctrine\Exception;
+namespace Spiffy\Zend\Form\Exception;
 use Zend_Exception;
 
-class NoFormElement extends Zend_Exception
+class InvalidEntity extends Zend_Exception
 {
     public function __construct($msg = '')
     {

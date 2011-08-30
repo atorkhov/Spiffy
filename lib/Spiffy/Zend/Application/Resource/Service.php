@@ -24,7 +24,7 @@ class Spiffy_Zend_Application_Resource_Service extends Zend_Application_Resource
     * @var array
     */
     protected $_actionHelpers = array(
-        'Spiffy\Service\Controller\Action\Helper\Get'
+        'Spiffy\Zend\Controller\Action\Helper\Get'
     );
     
     /**
@@ -32,7 +32,7 @@ class Spiffy_Zend_Application_Resource_Service extends Zend_Application_Resource
     * @var array
     */
     protected $_viewHelpers = array(
-        'get' => 'Spiffy\Service\View\Helper\Get' 
+        'get' => 'Spiffy\Zend\View\Helper\Get' 
     );
 
     /**

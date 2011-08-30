@@ -15,10 +15,10 @@
 * @license    http://www.spiffyjr.me/license     New BSD License
 */
 
-namespace Spiffy\Service\Factory\Zend;
+namespace Spiffy\Zend\Service;
 use Zend_Controller_Front;
 
-abstract class AbstractResource 
+abstract class AbstractServiceResource 
 {
     /**
      * Gets a application resource. 

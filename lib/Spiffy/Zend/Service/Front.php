@@ -10,18 +10,17 @@
 * http://www.spiffyjr.me/license
 *
 * @category   Spiffy
-* @package    Spiffy_Doctrine
+* @package    Spiffy_Service
 * @copyright  Copyright (c) 2011 Kyle Spraggs (http://www.spiffyjr.me)
 * @license    http://www.spiffyjr.me/license     New BSD License
 */
 
-namespace Spiffy\Doctrine\Exception;
-use Zend_Exception;
+namespace Spiffy\Zend\Service;
 
-class InvalidEntity extends Zend_Exception
+class Front extends AbstractServiceResource
 {
-    public function __construct($msg = '')
-    {
-        parent::__construct($msg, 500);
-    }
+	public function get() 
+	{
+	    return parent::get('frontController');
+	}
 }

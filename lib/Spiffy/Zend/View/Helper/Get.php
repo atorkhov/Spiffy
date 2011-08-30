@@ -1,5 +1,5 @@
 <?php
-namespace Spiffy\Service\View\Helper;
+namespace Spiffy\Zend\View\Helper;
 use Zend_Controller_Front,
     Zend_View_Helper_Abstract;
 

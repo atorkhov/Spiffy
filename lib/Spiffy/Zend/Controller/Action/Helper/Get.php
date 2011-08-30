@@ -15,7 +15,7 @@
 * @license    http://www.spiffyjr.me/license     New BSD License
 */
 
-namespace Spiffy\Service\Controller\Action\Helper;
+namespace Spiffy\Zend\Controller\Action\Helper;
 use Zend_Controller_Action_Helper_Abstract,
     Zend_Registry;
 

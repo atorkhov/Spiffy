@@ -1,8 +1,9 @@
 <?php 
-namespace Spiffy\Doctrine;
+namespace Spiffy\Zend;
 use Doctrine\DBAL\Types\Type,
     Doctrine\ORM\Mapping\ClassMetadataInfo,
-    Zend_Form;
+    Zend_Form,
+    Zend_Registry;
 
 class Form extends Zend_Form
 {
@@ -38,11 +39,18 @@ class Form extends Zend_Form
      * 
      * @param array $options
      */
-    public function __construct(array $options = array())
+    public function __construct($entity = null, array $options = array())
     {
+        if ($entity) {
+            $options['entity'] = $entity;
+        }
         $options = array_merge($this->getDefaultOptions(), $options);
         
         parent::__construct($options);
+        
+        if ($this->getEntity()) {
+            $this->setDefaults($this->getEntity()->toArray());
+        }
     }
     
     /**
@@ -53,14 +61,14 @@ class Form extends Zend_Form
      * @param string $name
      * @param string $element
      * @param array $options
-     * @throws Exception\NoFormElement
+     * @throws Form\Exception\NoFormElement
      */
     public function add($name, $element = null, array $options = array())
     {
         if ($this->getEntity()) {
             $mapping = null;
             $metadata = $this->getEntity()->getClassMetadata();
-            
+
             if (isset($metadata->fieldMappings[$name])) {
                 $mapping = $metadata->getFieldMapping($name); 
             } elseif (isset($metadata->assocationMappings[$name])) {
@@ -80,8 +88,11 @@ class Form extends Zend_Form
         }
         
         if (!$element) {
-            throw new Exception\NoFormElement(
-            	'No form element was specified and could not be determined automatically'
+            throw new Form\Exception\NoFormElement(
+                sprintf(
+                	'No form element was specified for "%s" and one not be determined automatically',
+                	$name
+            	)
             );
         }
         
@@ -90,6 +101,20 @@ class Form extends Zend_Form
         }
         
         $this->addElement($element, $name, $options);
+    }
+    
+    /**
+     * Quick access to Spiffy_Service::get if registered.
+     * 
+     * @param string $service
+     * @return object
+     */
+    public function get($service)
+    {
+        if (Zend_Registry::isRegistered('Spiffy_Service')) {
+            return Zend_Registry::get('Spiffy_Service')->get($service);
+        }
+        throw new Form\Exception\ServiceNotRegistered('Spiffy_Service is not registered');
     }
     
     /**
@@ -154,11 +179,12 @@ class Form extends Zend_Form
             $entity = new $entity();
         }
         
-        if (!$entity instanceof AbstractEntity) {
-            throw new Exception\InvalidEntity(
-            	'setEntity() expects instance of Spiffy\Doctrine\Entity'
-            );
-        }
+        //if (!$entity instanceof AbstractEntity) {
+        //    throw new Form\Exception\InvalidEntity(
+        //    	'setEntity() expects instance of Spiffy\Doctrine\AbstractEntity'
+        //    );
+        //}
+        $this->setDefaults($entity->toArray());
         $this->_entity = $entity;
     }
 }

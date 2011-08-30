@@ -384,7 +384,7 @@ abstract class AbstractEntity
         foreach($metadata->getFieldNames() as $field) {
             $getter = 'get' . ucfirst($field);
             if (method_exists($this, $getter)) {
-                $result[$field] = $this->$getter();
+                $value = $this->$getter();
             } elseif (isset($this->$field) || property_exists($this, $field)) {
                 if (isset($metadata->fieldMappings[$field])) {
                     $mapping = $metadata->getFieldMapping($field);
@@ -396,15 +396,24 @@ abstract class AbstractEntity
                 if ($mapping && $mapping['type'] == Type::BOOLEAN) {
                     $isser = 'is' . ucfirst(preg_replace('/^is/', '', $field));
                     if (method_exists($this, $isser)) {
-                        $result[$field] = $this->$isser();
-                        continue;
+                        $value = $this->$isser();
                     }
+                } else {
+                    $value = $this->$field;
                 }
-                
-                $result[$field] = $this->$field;
             } else {
-                $result[$field] = null;
+                $value = null;
             }
+            
+            // sanitize field
+            if (is_object($value)) {
+                switch(get_class($value)) {
+                    case 'DateTime':
+                        $value = $value->format('c');
+                        break;
+                }
+            }
+            $result[$field] = $value;
         }
         
         if ($filter) {

@@ -89,7 +89,7 @@ class Spiffy_Zend_Application_Resource_Doctrine extends Zend_Application_Resourc
         $container = new Spiffy\Doctrine\Container($this->getOptions());
 
         Zend_Registry::set('Spiffy_Doctrine', $container);
-
+        
         return $container;
     }
 }

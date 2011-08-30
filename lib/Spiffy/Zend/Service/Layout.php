@@ -15,9 +15,9 @@
 * @license    http://www.spiffyjr.me/license     New BSD License
 */
 
-namespace Spiffy\Service\Factory;
+namespace Spiffy\Zend\Service;
 
-class Layout extends Zend\ApplicationResource
+class Layout extends AbstractServiceResource
 {
 	public function get() 
 	{

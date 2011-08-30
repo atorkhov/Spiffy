@@ -10,16 +10,18 @@
 * http://www.spiffyjr.me/license
 *
 * @category   Spiffy
-* @package    Spiffy_Dojo
+* @package    Spiffy_Doctrine
 * @copyright  Copyright (c) 2011 Kyle Spraggs (http://www.spiffyjr.me)
 * @license    http://www.spiffyjr.me/license     New BSD License
 */
 
-class Spiffy_Dojo_Form_Element_FilteringSelectEntity extends Spiffy_Dojo_Form_Element_ComboBoxEntity
+namespace Spiffy\Zend\Form\Exception;
+use Zend_Exception;
+
+class ServiceNotRegistered extends Zend_Exception
 {
-    /**
-     * Use formSelect view helper by default
-     * @var string
-     */
-    public $helper = 'FilteringSelect';
+    public function __construct($msg = '')
+    {
+        parent::__construct($msg, 500);
+    }
 }
