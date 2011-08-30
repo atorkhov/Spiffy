@@ -15,7 +15,7 @@
 * @license    http://www.spiffyjr.me/license     New BSD License
 */
 
-class Spiffy_ZFDebug_Doctrine2 extends ZFDebug_Controller_Plugin_Debug_Plugin 
+class Spiffy_ZFDebug_DoctrineOrm extends ZFDebug_Controller_Plugin_Debug_Plugin 
     implements ZFDebug_Controller_Plugin_Debug_Plugin_Interface
 {
 

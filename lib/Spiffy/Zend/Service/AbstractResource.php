@@ -18,7 +18,7 @@
 namespace Spiffy\Service\Factory\Zend;
 use Zend_Controller_Front;
 
-class ApplicationResource 
+abstract class AbstractResource 
 {
     /**
      * Gets a application resource. 

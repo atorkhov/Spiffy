@@ -4,7 +4,7 @@ use Symfony\Component\Config\FileLocator,
     Symfony\Component\DependencyInjection\ContainerBuilder,
     Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
-class Spiffy_Application_Resource_Service extends Zend_Application_Resource_ResourceAbstract
+class Spiffy_Zend_Application_Resource_Service extends Zend_Application_Resource_ResourceAbstract
 {
     /**
      * Class options.

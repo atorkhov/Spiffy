@@ -20,8 +20,12 @@ class Group
      */
     protected $name;
 
-   /**
-    * @ORM\ManyToMany(targetEntity="Permission", mappedBy="groups")
-    */
-    protected $permissions;
+	/**
+	 * @ORM\ManyToMany(targetEntity="Spiffy\Auth\Entity\Permission")
+	 * @ORM\JoinTable(name="auth_group_permission",
+	 *      joinColumns={@ORM\JoinColumn(name="group_id", referencedColumnName="id")},
+	 *      inverseJoinColumns={@ORM\JoinColumn(name="permission_id", referencedColumnName="id")}
+	 * )
+	 */
+	protected $permissions;
 }

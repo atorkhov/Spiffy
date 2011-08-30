@@ -17,7 +17,7 @@
 
 use Spiffy\Doctrine\Container;
 
-class Spiffy_Application_Resource_Doctrine extends Zend_Application_Resource_ResourceAbstract
+class Spiffy_Zend_Application_Resource_Doctrine extends Zend_Application_Resource_ResourceAbstract
 {
     protected $_options = array(
         'defaultCacheKey' => 'default',

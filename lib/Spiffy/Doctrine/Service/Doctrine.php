@@ -22,6 +22,9 @@ class Doctrine
 {
 	public function get() 
 	{
-		return Zend_Registry::get('Spiffy_Doctrine');
+	    if (Zend_Registry::has('Spiffy_Doctrine')) {
+		    return Zend_Registry::get('Spiffy_Doctrine');
+	    }
+	    return null;
 	}
 }
