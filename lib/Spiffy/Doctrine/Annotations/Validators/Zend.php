@@ -19,139 +19,139 @@ namespace Spiffy\Doctrine\Annotations\Validators;
 use Doctrine\Common\Annotations\Annotation;
 
 /** Zend Validator SuperClass */
-class Validator extends Annotation
+class Zend extends Annotation
 {
     public $breakChain = false;
 }
 
 /** @Annotation */
-final class Alpha extends Validator
+final class Alpha extends Zend
 {
     public $class = 'Zend_Validate_Alpha';
 }
 
 /** @Annotation */
-final class Barcode extends Validator
+final class Barcode extends Zend
 {
     public $class = 'Zend_Validate_Barcode';
 }
 
 /** @Annotation */
-final class Between extends Validator
+final class Between extends Zend
 {
     public $class = 'Zend_Validate_Between';
 }
 
 /** @Annotation */
-final class Callback extends Validator
+final class Callback extends Zend
 {
     public $class = 'Zend_Validate_Callback';
 }
 
 /** @Annotation */
-final class CreditCard extends Validator
+final class CreditCard extends Zend
 {
     public $class = 'Zend_Validate_CreditCard';
 }
 
 /** @Annotation */
-final class Ccnum extends Validator
+final class Ccnum extends Zend
 {
     public $class = 'Zend_Validate_Ccnum';
 }
 
 /** @Annotation */
-final class Date extends Validator
+final class Date extends Zend
 {
     public $class = 'Zend_Validate_Date';
 }
 
 /** @Annotation */
-final class Digits extends Validator
+final class Digits extends Zend
 {
     public $class = 'Zend_Validate_Digits';
 }
 
 /** @Annotation */
-final class EmailAddress extends Validator
+final class EmailAddress extends Zend
 {
     public $class = 'Zend_Validate_EmailAddress';
 }
 
 /** @Annotation */
-final class Float extends Validator
+final class Float extends Zend
 {
     public $class = 'Zend_Validate_Float';
 }
 
 /** @Annotation */
-final class GreaterThan extends Validator
+final class GreaterThan extends Zend
 {
     public $class = 'Zend_Validate_GreaterThan';
 }
 
 /** @Annotation */
-final class Hex extends Validator
+final class Hex extends Zend
 {
     public $class = 'Zend_Validate_Hex';
 }
 
 /** @Annotation */
-final class Hostname extends Validator
+final class Hostname extends Zend
 {
     public $class = 'Zend_Validate_Hostname';
 }
 
 /** @Annotation */
-final class Iban extends Validator
+final class Iban extends Zend
 {
     public $class = 'Zend_Validate_Iban';
 }
 
 /** @Annotation */
-final class Identical extends Validator
+final class Identical extends Zend
 {
     public $class = 'Zend_Validate_Identical';
 }
 
 /** @Annotation */
-final class InArray extends Validator
+final class InArray extends Zend
 {
     public $class = 'Zend_Validate_InArray';
 }
 
 /** @Annotation */
-final class Int extends Validator
+final class Int extends Zend
 {
     public $class = 'Zend_Validate_Int';
 }
 
 /** @Annotation */
-final class Isbn extends Validator
+final class Isbn extends Zend
 {
     public $class = 'Zend_Validate_Isbn';
 }
 
 /** @Annotation */
-final class LessThan extends Validator
+final class LessThan extends Zend
 {
     public $class = 'Zend_Validate_LessThan';
 }
 
 /** @Annotation */
-final class NotEmpty extends Validator
+final class NotEmpty extends Zend
 {
     public $class = 'Zend_Validate_NotEmpty';
 }
 
 /** @Annotation */
-final class PostCode extends Validator
+final class PostCode extends Zend
 {
     public $class = 'Zend_Validate_PostCode';
 }
 
 /** @Annotation */
-final class StringLength extends Validator
+final class StringLength extends Zend
 {
     public $class = 'Zend_Validate_StringLength';
 }

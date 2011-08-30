@@ -63,8 +63,8 @@ class Spiffy_Application_Resource_Doctrine extends Zend_Application_Resource_Res
                         'registry' => array(
                             'files' => array(
                                 'Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php',
-                                'Spiffy/Doctrine/Annotations/Filters/Filter.php',
-                                'Spiffy/Doctrine/Annotations/Validators/Validator.php'
+                                'Spiffy/Doctrine/Annotations/Filters/Zend.php',
+                                'Spiffy/Doctrine/Annotations/Validators/Zend.php'
                             ),
                             'namespaces' => array()
                         ),
@@ -86,21 +86,10 @@ class Spiffy_Application_Resource_Doctrine extends Zend_Application_Resource_Res
 
     public function init()
     {
-        $this->registerActionHelper();
-
         $container = new Spiffy\Doctrine\Container($this->getOptions());
 
         Zend_Registry::set('Spiffy_Doctrine', $container);
 
         return $container;
-    }
-
-    /**
-     * Register the Doctrine acton helpers.
-     */
-    public function registerActionHelper()
-    {
-        Zend_Controller_Action_HelperBroker::addHelper(
-            new Spiffy_Controller_Action_Helper_EntityManager());
     }
 }

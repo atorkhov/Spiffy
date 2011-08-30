@@ -10,15 +10,15 @@
 * http://www.spiffyjr.me/license
 *
 * @category   Spiffy
-* @package    Spiffy_Domain
+* @package    Spiffy_Doctrine
 * @copyright  Copyright (c) 2011 Kyle Spraggs (http://www.spiffyjr.me)
 * @license    http://www.spiffyjr.me/license     New BSD License
 */
 
-namespace Spiffy\Domain\Exception;
+namespace Spiffy\Doctrine\Exception;
 use Zend_Exception;
 
-class NoSetter extends Zend_Exception
+class NoFormElement extends Zend_Exception
 {
     public function __construct($msg = '')
     {

@@ -1,12 +1,11 @@
 <?php
 
-use Symfony\Component\Config\FileLocator;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\Config\FileLocator,
+    Symfony\Component\DependencyInjection\ContainerBuilder,
+    Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 class Spiffy_Application_Resource_Service extends Zend_Application_Resource_ResourceAbstract
 {
-    
     /**
      * Class options.
      * @var array
@@ -25,8 +24,7 @@ class Spiffy_Application_Resource_Service extends Zend_Application_Resource_Reso
     * @var array
     */
     protected $_actionHelpers = array(
-        'Spiffy_Controller_Action_Helper_ServiceContainer', 
-        'Spiffy_Controller_Action_Helper_Get'
+        'Spiffy\Service\Controller\Action\Helper\Get'
     );
     
     /**
@@ -34,7 +32,7 @@ class Spiffy_Application_Resource_Service extends Zend_Application_Resource_Reso
     * @var array
     */
     protected $_viewHelpers = array(
-        'get' => 'Spiffy_View_Helper_Get' 
+        'get' => 'Spiffy\Service\View\Helper\Get' 
     );
 
     /**
@@ -50,7 +48,7 @@ class Spiffy_Application_Resource_Service extends Zend_Application_Resource_Reso
             unset($options['autoloadActionHelpers']);
         }
         
-        if ($options['autoloadViewHelpers']) {
+        if (true == $options['autoloadViewHelpers']) {
             $this->_registerViewHelpers();
             unset($options['autoloadViewHelpers']);
         }

@@ -15,12 +15,14 @@
 * @license    http://www.spiffyjr.me/license     New BSD License
 */
 
-class Spiffy_Controller_Action_Helper_ServiceContainer extends
-    Zend_Controller_Action_Helper_Abstract
+namespace Spiffy\Service\Controller\Action\Helper;
+use Zend_Controller_Action_Helper_Abstract,
+    Zend_Registry;
+
+class Get extends Zend_Controller_Action_Helper_Abstract
 {
     /**
      * Service container.
-     * 
      * @var Spiffy\Service\Container
      */
     public $serviceContainer = null;
@@ -39,6 +41,6 @@ class Spiffy_Controller_Action_Helper_ServiceContainer extends
      */
     public function direct($service)
     {
-        return $this->serviceContainer;
+        return $this->serviceContainer->get($service);
     }
 }

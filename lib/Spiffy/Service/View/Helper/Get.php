@@ -1,6 +1,9 @@
 <?php
+namespace Spiffy\Service\View\Helper;
+use Zend_Controller_Front,
+    Zend_View_Helper_Abstract;
 
-class Spiffy_View_Helper_Get extends Zend_View_Helper_Abstract
+class Get extends Zend_View_Helper_Abstract
 {
     /**
      * Gets a service.
