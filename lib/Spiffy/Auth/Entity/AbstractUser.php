@@ -3,9 +3,10 @@ namespace Spiffy\Auth\Entity;
 use Doctrine\ORM\Mapping as ORM,
     Spiffy\Doctrine\Annotations\Filters as Filter,
     Spiffy\Doctrine\Annotations\Validators as Assert,
-    Spiffy\Doctrine\AbstractEntity;
+    Spiffy\Doctrine\AbstractEntity,
+    Zend_Acl_Role_Interface;
 
-abstract class AbstractUser extends AbstractEntity
+abstract class AbstractUser extends AbstractEntity implements Zend_Acl_Role_Interface
 {
     /**
      * @ORM\Id
