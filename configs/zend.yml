@@ -1,9 +1,8 @@
 parameters:
   front.factory.class: Spiffy\Service\Factory\Front
   layout.factory.class: Spiffy\Service\Factory\Layout
-  session.factory.class: Spiffy\Service\Factory\Session
   view.factory.class: Spiffy\Service\Factory\View
-  
+
 services:
   front:
     factory_class: %front.factory.class%
@@ -11,10 +10,6 @@ services:
     
   layout:
     factory_class: %layout.factory.class%
-    factory_method: get
-    
-  session:
-    factory_class: %session.factory.class%
     factory_method: get
     
   view:
