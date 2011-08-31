@@ -1,7 +1,7 @@
 parameters:
-  front.factory.class: Spiffy\Service\Factory\Front
-  layout.factory.class: Spiffy\Service\Factory\Layout
-  view.factory.class: Spiffy\Service\Factory\View
+  front.factory.class: Spiffy\Zend\Service\Front
+  layout.factory.class: Spiffy\Zend\Service\Layout
+  view.factory.class: Spiffy\Zend\Service\View
 
 services:
   front:
