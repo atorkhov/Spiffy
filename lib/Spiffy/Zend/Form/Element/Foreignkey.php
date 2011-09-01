@@ -17,7 +17,7 @@
 
 use Spiffy\Form;
 
-class Spiffy_Form_Element_Entity extends Zend_Form_Element_Select
+class Spiffy_Zend_Form_Element_Foreignkey extends Zend_Form_Element_Select
 {
     /**
      * Entity class.

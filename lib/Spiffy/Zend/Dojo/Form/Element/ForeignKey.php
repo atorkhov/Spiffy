@@ -1,5 +1,5 @@
 <?php
-class Spiffy_Zend_Dojo_Form_Element_ForeignKey extends Zend_Dojo_Form_Element_ComboBox
+class Spiffy_Zend_Dojo_Form_Element_ForeignKey extends Zend_Dojo_Form_Element_FilteringSelect
 {
     /**
      * Entity class.
@@ -25,12 +25,13 @@ class Spiffy_Zend_Dojo_Form_Element_ForeignKey extends Zend_Dojo_Form_Element_Co
      */
     public function init()
     {
-        //public $helper = 'FilteringSelect';
         if (!Zend_Registry::isRegistered('Spiffy_Doctrine')) {
-            throw new Zend_Form_Exception('Spiffy\Doctrine\Container is required when using ForeignKey');
+            throw new Zend_Form_Exception(
+            	'Spiffy\Doctrine\Container is required when using ForeignKey'
+            );
         }
 
-        if (!$this->_class) {
+        if (!$this->getClass()) {
             throw new Zend_Form_Element_Exception(get_class($this) . ' requires a class');
         }
 
