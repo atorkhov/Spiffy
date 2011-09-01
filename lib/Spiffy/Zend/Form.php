@@ -2,11 +2,18 @@
 namespace Spiffy\Zend;
 use Doctrine\DBAL\Types\Type,
     Doctrine\ORM\Mapping\ClassMetadataInfo,
+    Zend_Dojo,
     Zend_Form,
     Zend_Registry;
 
 class Form extends Zend_Form
 {
+    /**
+     * flag: is this form dojo enabled?
+     * @var boolean
+     */
+    protected $_dojoEnabled = false;
+    
     /**
      * Attached entity instance.
      * @var Spiffy\Doctrine\AbstractEntity
@@ -35,16 +42,42 @@ class Form extends Zend_Form
     );
     
     /**
+    * Default elements for Zend_Dojo_Form.
+    * @var array
+    */
+    protected $_defaultDojoElements = array(
+        Type::SMALLINT      => 'NumberSpinner',
+        Type::BIGINT        => 'NumberSpinner',
+        Type::INTEGER       => 'NumberSpinner',
+        Type::BOOLEAN       => 'CheckBox',
+        Type::DATE          => 'DateTextBox',
+        Type::DATETIME      => 'DateTextBox',
+        Type::DATETIMETZ    => 'DateTextBox',
+        Type::DECIMAL       => 'NumberSpinner',
+        Type::OBJECT        => null,
+        Type::TARRAY        => null,
+        Type::STRING        => 'TextBox',
+        Type::TEXT          => 'Textarea',
+        Type::TIME          => 'TimeTextBox',
+        'TO_ONE'            => 'ForeignKey'
+    );
+    
+    /**
      * Constructor.
      * 
-     * @param array $options
+     * @param string|object $entity
+     * @param array|Zend_Config|null $options
      */
     public function __construct($entity = null, array $options = array())
     {
         if ($entity) {
             $options['entity'] = $entity;
         }
-        $options = array_merge($this->getDefaultOptions(), $options);
+        $defaultOptions = $this->getDefaultOptions();
+        if (!is_array($defaultOptions)) {
+            $defaultOptions = array();
+        }
+        $options = array_merge($defaultOptions, $options);
         
         parent::__construct($options);
         
@@ -78,13 +111,24 @@ class Form extends Zend_Form
             if (!$element) {
                 if ($mapping['type'] & ClassMetadataInfo::TO_ONE) {
                     // todo: implement automatic XXX_To_One entity   
-                } else if (isset($this->_defaultElements[$mapping['type']])) {
-                    $element = $this->_defaultElements[$mapping['type']];
+                } else {
+                    $element = $this->_getDefaultElement($mapping['type']);
                 }
             }
             
             $options['filters'] = $this->getEntity()->getPropertyFilters($name);
             $options['validators'] = $this->getEntity()->getPropertyValidators($name);
+            
+            if (in_array('NotEmpty', $options['validators'])) {
+                $options['required'] = true;
+            } else {
+                foreach($options['validators'] as $validator) {
+                    if (is_array($validator) && $validator[0] == 'NotEmpty') {
+                        $options['required'] = true;
+                        break;
+                    }
+                }
+            }
         }
         
         if (!$element) {
@@ -144,6 +188,8 @@ class Form extends Zend_Form
             return false;
         }
         
+        exit;
+        
         return $this->getEntity()->save($flush);
     }
     
@@ -167,6 +213,23 @@ class Form extends Zend_Form
     {
         return $this->_entity;
     }
+
+    /**
+     * Set the dojo enabled flag. Once set, there is no way
+     * to clear it.
+     */
+    public function setDojoEnabled()
+    {
+        Zend_Dojo::enableForm($this);
+        
+        $this->addPrefixPath(
+        	'Spiffy_Zend_Dojo_Form_Element',
+        	'Spiffy/Zend/Dojo/Form/Element', 
+        	'element'
+        );
+        
+        $this->_dojoEnabled = true;
+    }
     
     /**
      * Sets the attached entity instance.
@@ -186,5 +249,16 @@ class Form extends Zend_Form
         //}
         $this->setDefaults($entity->toArray());
         $this->_entity = $entity;
+    }
+    
+    /**
+     * Gets the default element for a mapping type.
+     * 
+     * @param string $type
+     */
+    protected function _getDefaultElement($type)
+    {
+        $elements = ($this->_dojoEnabled) ? $this->_defaultDojoElements : $this->_defaultElements;
+        return isset($elements[$type]) ? $elements[$type] : null;
     }
 }

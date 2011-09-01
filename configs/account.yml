@@ -1,0 +1,15 @@
+imports:
+  auth:
+    resource: auth.yml
+  doctrine:
+    resource: doctrine.yml
+    
+parameters:
+  account.class: Spiffy\Account\Service\Account
+  
+services:
+  account:
+    class: %account.class%
+    arguments:
+      - @doctrine
+      - @security

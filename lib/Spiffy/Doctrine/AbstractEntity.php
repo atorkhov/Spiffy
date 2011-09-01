@@ -267,7 +267,7 @@ abstract class AbstractEntity
     /**
      * Gets the filter input for a class.
      * 
-     * @return Zend_Filter_Input
+     * @return \Zend_Filter_Input
      */
     public static function getFilterInput()
     {

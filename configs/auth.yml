@@ -1,0 +1,12 @@
+imports:
+  doctrine:
+    resource: doctrine.yml
+    
+parameters:
+  security.class: Spiffy\Auth\Service\Security
+  
+services:
+  security:
+    class: %security.class%
+    arguments:
+      - @doctrine

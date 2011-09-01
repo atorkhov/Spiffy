@@ -1,8 +1,9 @@
 <?php
 namespace Spiffy\Auth;
-use Zend_Acl_Resource_Interface;
+use Spiffy\Doctrine\AbstractEntity as BaseAbstractEntity,
+    Zend_Acl_Resource_Interface;
 
-abstract class AbstractEntity implements Zend_Acl_Resource_Interface
+abstract class AbstractEntity extends BaseAbstractEntity implements Zend_Acl_Resource_Interface
 {
     
 }

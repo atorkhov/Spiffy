@@ -6,6 +6,9 @@ use Doctrine\ORM\Mapping as ORM,
     Spiffy\Doctrine\AbstractEntity,
     Zend_Acl_Role_Interface;
 
+/**
+ * @ORM\MappedSuperclass
+ */
 abstract class AbstractUser extends AbstractEntity implements Zend_Acl_Role_Interface
 {
     /**
@@ -61,54 +64,103 @@ abstract class AbstractUser extends AbstractEntity implements Zend_Acl_Role_Inte
     * )
     */
     protected $groups;
-    
+
     /**
-     * Set the username.
-     * 
-     * @param string $username
+     * (non-PHPdoc)
+     * @see Zend_Acl_Role_Interface::getRoleId()
      */
+    public function getRoleId()
+    {
+        return $this->id;
+    }
+
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
+
+    public function getUsername()
+    {
+        return $this->username;
+    }
+
     public function setUsername($username)
     {
         $this->username = $username;
     }
-    
-    /**
-     * Get the email.
-     * 
-     * @return string
-     */
+
     public function getEmail()
     {
         return $this->email;
     }
-    
-    /**
-     * Set the email.
-     * 
-     * @param string $email
-     */
+
     public function setEmail($email)
     {
         $this->email = $email;
     }
-    
-    /**
-     * flag: is the user active?
-     * 
-     * @return boolean
-     */
+
+    public function getPassword()
+    {
+        return $this->password;
+    }
+
+    public function setPassword($password)
+    {
+        $this->password = $password;
+    }
+
+    public function getVerificationCode()
+    {
+        return $this->verificationCode;
+    }
+
+    public function setVerificationCode($verificationCode)
+    {
+        $this->verificationCode = $verificationCode;
+    }
+
     public function isActive()
     {
         return $this->isActive;
     }
-    
-    /**
-     * Set the active flag.
-     * 
-     * @param boolean $active
-     */
-    public function setActive($active)
+
+    public function setIsActive($isActive)
     {
-        $this->isActive = (bool) $active;
+        $this->isActive = $isActive;
+    }
+
+    public function getLastLogin()
+    {
+        return $this->lastLogin;
+    }
+
+    public function updateLastLogin($lastLogin)
+    {
+        $this->lastLogin = new DateTime('now');
+    }
+
+    public function getJoinDate()
+    {
+        return $this->joinDate;
+    }
+
+    public function setJoinDate($joinDate)
+    {
+        $this->joinDate = $joinDate;
+    }
+
+    public function getGroups()
+    {
+        return $this->groups;
+    }
+
+    public function setGroups($groups)
+    {
+        $this->groups = $groups;
     }
 }

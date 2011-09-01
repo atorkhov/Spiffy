@@ -1,5 +1,3 @@
-# Spiffy Doctrine Container
-
 parameters:
   doctrine.factory.class: Spiffy\Doctrine\Service\Doctrine
   
