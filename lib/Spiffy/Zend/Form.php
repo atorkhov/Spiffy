@@ -70,6 +70,12 @@ class Form extends Zend_Form
      */
     public function __construct($entity = null, array $options = array())
     {
+        $this->addPrefixPath(
+        	'Spiffy_Zend_Form_Element',
+        	'Spiffy/Zend/Form/Element', 
+        	'element'
+        );
+        
         if ($entity) {
             $options['entity'] = $entity;
         }
@@ -123,7 +129,7 @@ class Form extends Zend_Form
                 $options['required'] = true;
             } else {
                 foreach($options['validators'] as $validator) {
-                    if (is_array($validator) && $validator[0] == 'NotEmpty') {
+                    if (is_array($validator) && $validator['validator'] == 'NotEmpty') {
                         $options['required'] = true;
                         break;
                     }
