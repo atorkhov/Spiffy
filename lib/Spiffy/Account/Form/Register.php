@@ -33,6 +33,19 @@ class Register extends BaseForm
     {
         $valid = parent::isValid($data);
         
+        $em = $this->get('doctrine')->getEntityManager();
+        $repo = $em->getRepository(get_class($this->getEntity()));
+        
+        if ($repo->findOneBy(array('username' => $this->username->getValue()))) {
+            $this->username->addErrorMessage('That username is already in use')->markAsError();
+            $valid = false;
+        }
+        
+        if ($repo->findOneBy(array('email' => $this->email->getValue()))) {
+            $this->email->addErrorMessage('That email address is already in use')->markAsError();
+            $valid = false;
+        }
+        
         if ($this->password->getValue() != $this->confirmPassword->getValue()) {
             $this->addErrorMessage('The passwords you entered do not match')->markAsError();
             $valid = false;

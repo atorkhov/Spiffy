@@ -10,11 +10,10 @@ class Login extends BaseForm
      */
     public function init()
     {
-        $this->add('username');
-        $this->add('password', $this->_dojoEnabled ? 'PasswordTextBox' : 'password');
-        $this->add('login', ($this->_dojoEnabled) ? 'SubmitButton' : 'submit', array(
+        $this->add('activationCode');
+        $this->add('activate', ($this->_dojoEnabled) ? 'SubmitButton' : 'submit', array(
             'ignore' => true,
-            'label' => 'Login'
+            'label' => 'Activate'
         ));
     }
 }

@@ -30,6 +30,23 @@ class Account
     }
     
     /**
+     * Activates a user account if the code is correct.
+     * 
+     * @param AbstractUser $email
+     * @param string $code
+     */
+    public function activateUser(AbstractUser $user, $code)
+    {
+        if ($user->getVerificationCode() == $code) {
+            $user->setIsActive(true);
+            
+            return $user->save();
+        }
+        
+        return false;
+    }
+    
+    /**
      * Creates a new user.
      * 
      * @param AbstractUser $user
@@ -39,11 +56,11 @@ class Account
         $user->setPassword($this->_security->transformPassword($user->getPassword()));
         
         $user->setIsActive(false);
-        $user->setLastLogin(new DateTime('now'));
         $user->setJoinDate(new DateTime('now'));
         $user->setVerificationCode($this->_generateVerificationCode());
+        $user->updateLastLogin();
 
-        return $user->save(true);
+        return $user->save();
     }
     
     /**

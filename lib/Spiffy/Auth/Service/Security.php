@@ -95,14 +95,15 @@ class Security implements Zend_Auth_Adapter_Interface
         $user = $this->findUser();
         
         if ($user) {
-            if ($this->checkPassword($user, $this->_password)) {
+            $password = explode('$', $user->getPassword());
+            if ($this->transformPassword($this->_password, $password[1]) == $user->getPassword()) {
                 if ($user->isActive()) {
                     return new Zend_Auth_Result(Zend_Auth_Result::SUCCESS, $user);
                 } else {
                     return new Zend_Auth_Result(
                         Zend_Auth_Result::FAILURE_UNCATEGORIZED,
                         $user,
-                        array('The username you request is not activated. This could be because an 
+                        array('Your account is currently inactive. This could be because an 
                         administrator disabled it or you have not verified your account email.')
                     );
                 }
@@ -146,9 +147,13 @@ class Security implements Zend_Auth_Adapter_Interface
     }
     
     /**
-     * Checks if a password matches.
+     * Logs a user out.
      */
-
+    public function logout()
+    {
+        $this->getAuth()->clearIdentity();
+    }
+    
     /**
      * Transforms a password with specified algorithm and returns
      * a string for storage.
@@ -156,12 +161,15 @@ class Security implements Zend_Auth_Adapter_Interface
      * Passwords follow the Django format: algorithm$salt$password
      *
      * @param string $password
+     * @param null|string $salt
      * @param string $algorithm
      * @return string
      */
-    public function transformPassword($password, $algorithm = 'sha1')
+    public function transformPassword($password, $salt = null, $algorithm = 'sha1')
     {
-        $salt = substr(sha1(microtime(true)), 0, 10);
+        if (null === $salt) {
+            $salt = substr(sha1(microtime(true)), 0, 10);
+        }
 
         $saltCount = strlen($salt);
         $count = strlen($password) - 1;

@@ -1,6 +1,7 @@
 <?php
 namespace Spiffy\Auth\Entity;
-use Doctrine\ORM\Mapping as ORM,
+use DateTime,
+    Doctrine\ORM\Mapping as ORM,
     Spiffy\Doctrine\Annotations\Filters as Filter,
     Spiffy\Doctrine\Annotations\Validators as Assert,
     Spiffy\Doctrine\AbstractEntity,
@@ -139,7 +140,7 @@ abstract class AbstractUser extends AbstractEntity implements Zend_Acl_Role_Inte
         return $this->lastLogin;
     }
 
-    public function updateLastLogin($lastLogin)
+    public function updateLastLogin()
     {
         $this->lastLogin = new DateTime('now');
     }
