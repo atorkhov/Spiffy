@@ -76,4 +76,17 @@ class Spiffy_Zend_Dojo_Form_Element_ForeignKey extends Zend_Dojo_Form_Element_Fi
     {
         $this->_queryBuilder = $qb;
     }
+/*    
+    public function getValue()
+    {
+        if ($this->_class && $this->_value) {
+            return $this->_doctrine->getEntityManager()->getReference(
+                $this->_class, 
+                unserialize($this->_value)
+            );
+        }
+        
+        return $this->_value;
+    }
+*/
 }

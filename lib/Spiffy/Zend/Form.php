@@ -88,7 +88,7 @@ class Form extends Zend_Form
         parent::__construct($options);
         
         if ($this->getEntity()) {
-            $this->setDefaults($this->getEntity()->toArray());
+            $this->setDefaults($this->getEntity()->toArray(false));
         }
     }
     
@@ -253,7 +253,7 @@ class Form extends Zend_Form
         //    	'setEntity() expects instance of Spiffy\Doctrine\AbstractEntity'
         //    );
         //}
-        $this->setDefaults($entity->toArray());
+        $this->setDefaults($entity->toArray(false));
         $this->_entity = $entity;
     }
     
