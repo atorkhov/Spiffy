@@ -56,15 +56,15 @@ abstract class AbstractUser extends AbstractEntity implements Zend_Acl_Role_Inte
     protected $joinDate;
     
    /**
-    * @ORM\ManyToMany(targetEntity="Spiffy\Auth\Entity\Group")
+    * @ORM\ManyToMany(targetEntity="Spiffy\Auth\Entity\Role")
     * @ORM\JoinTable
     * (
-    *     name="auth_user_group",
-    *     joinColumns={@ORM\JoinColumn(name="group_id", referencedColumnName="id")},
+    *     name="auth_user_role",
+    *     joinColumns={@ORM\JoinColumn(name="role_id", referencedColumnName="id")},
     *     inverseJoinColumns={@ORM\JoinColumn(name="user_id", referencedColumnName="id")}
     * )
     */
-    protected $groups;
+    protected $roles;
 
     /**
      * (non-PHPdoc)
@@ -155,13 +155,13 @@ abstract class AbstractUser extends AbstractEntity implements Zend_Acl_Role_Inte
         $this->joinDate = $joinDate;
     }
 
-    public function getGroups()
+    public function getRoles()
     {
-        return $this->groups;
+        return $this->roles;
     }
 
-    public function setGroups($groups)
+    public function setRoles($roles)
     {
-        $this->groups = $groups;
+        $this->roles = $roles;
     }
 }

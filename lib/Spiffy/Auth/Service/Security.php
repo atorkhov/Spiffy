@@ -72,7 +72,7 @@ class Security implements Zend_Auth_Adapter_Interface
      */
     public function isAuthenticated()
     {
-        return $this->_auth->hasIdentity();
+        return $this->getAuth()->hasIdentity();
     }
 
     /**

@@ -4,9 +4,9 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * @ORM\Entity
- * @ORM\Table(name="auth_permission")
+ * @ORM\Table(name="auth_resource")
  */
-class Permission
+class Resource
 {
     /**
      * @ORM\Id
@@ -15,11 +15,6 @@ class Permission
      */
     protected $id;
     
-    /**
-     * @ORM\Column(type="string",length="20")
-     */
-    protected $route;
-   
    /**
     * @ORM\Column(type="string",length="20")
     */
@@ -36,7 +31,7 @@ class Permission
     protected $action;
     
    /**
-    * @ORM\ManyToMany(targetEntity="Group", mappedBy="permissions")
+    * @ORM\ManyToMany(targetEntity="Role", mappedBy="resources")
     */
-    protected $groups;
+    protected $roles;
 }
