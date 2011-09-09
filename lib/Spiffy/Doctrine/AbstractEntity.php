@@ -1,7 +1,10 @@
 <?php
 namespace Spiffy\Doctrine;
 use Doctrine\Common\Annotations\AnnotationReader,
+    Doctrine\Common\Collections\ArrayCollection,
+    Doctrine\Common\Collections\Collection,
     Doctrine\DBAL\Types\Type,
+    Doctrine\ORM\Mapping\ClassMetadataInfo,
     ReflectionClass,
     ReflectionProperty,
     Zend_Filter,
@@ -214,6 +217,26 @@ abstract class AbstractEntity
             self::$_annotationReader__ = new AnnotationReader;
         }
         return self::$_annotationReader__;
+    }
+    
+    /**
+     * Gets the metadata mapping for a class property. Returns the
+     * fieldMapping or associationMapping accordingly.
+     * 
+     * @param string $propertyName
+     * @return array|null
+     */
+    public static function getPropertyMapping($propertyName)
+    {
+        $metadata = self::getClassMetadata();
+        
+        if (isset($metadata->fieldMappings[$propertyName])) {
+            return $metadata->fieldMappings[$propertyName];
+        } elseif (isset($metadata->associationMappings[$propertyName])) {
+            return $metadata->associationMappings[$propertyName];
+        }
+        
+        return null;
     }
     
     /**
@@ -433,13 +456,73 @@ abstract class AbstractEntity
     public function fromArray(array $data)
     {
         foreach($data as $key => $value) {
-            $setter = 'set' . ucfirst($key);
-            if (method_exists($this, $setter)) {
-                $this->$setter($value);
-            } elseif (isset($this->$key) || property_exists($this, $key)) {
+            $mapping = $this->getPropertyMapping($key);
+
+            if ($mapping && 
+                ($mapping['type'] & ClassMetadataInfo::TO_MANY) ||
+                ($mapping['type'] & ClassMetadataInfo::TO_ONE)
+            ) {
+                if ($mapping['type'] & ClassMetadataInfo::TO_ONE) {
+                    $value = $this->getEntityManager()->getReference(
+                        $mapping['targetEntity'],
+                        $this->_normalize($value)
+                    );
+                } else {
+                    if (!is_array($value)) {
+                        throw new Exception\InvalidMappingData(
+                            'Data for ManyToMany relations must be an array'
+                        );
+                    }
+                    
+                    if (!$this->$key instanceof Collection) {
+                        $this->$key = new ArrayCollection;
+                    }
+
+                    foreach($value as &$v) {
+                        $v = $this->getEntityManager()->getReference(
+                            $mapping['targetEntity'],
+                            $this->_normalize($v)
+                        );
+                    }
+                }
+            }
+
+            $this->_set($key, $value);
+        }
+    }
+    
+    protected function _set($key, $value)
+    {
+        $setter = 'set' . ucfirst($key);
+        if (method_exists($this, $setter)) {
+            $this->$setter($value);
+        } elseif (isset($this->$key) || property_exists($this, $key)) {
+            if ($this->$key instanceof Collection) {
+                if (!is_array($value)) {    
+                    throw new Exception\InvalidMappingData(
+                        'Data for Collections must be an array'
+                    );
+                }
+                
+                $this->$key->clear();
+                foreach($value as $v) {
+                    $this->$key->add($v);
+                }
+            } else {
                 $this->$key = $value;
             }
         }
+    }
+    
+    protected function _normalize($value)
+    {
+        if (is_object($value) || is_numeric($value)) {
+            ; // intentionally left blank
+        } else if ($this->_isSerialized($value)) {
+            $value = unserialize($value);
+        }
+        
+        return $value;
     }
 
     /**
@@ -459,4 +542,53 @@ abstract class AbstractEntity
         
         return true;
     }
+    
+    /**
+     * Determines if a string is serialized. This is a direct copy
+     * from the WordPress is_serialized() method.
+     * 
+     * @param string $data
+     */
+    protected function _isSerialized($data)
+    {
+        if (!is_string($data)) {
+            return false;
+        }
+        
+        $data = trim( $data );
+        if ( 'N;' == $data ) {
+            return true;
+        }
+      
+        $length = strlen( $data );
+        if ($length < 4) {
+            return false;
+        }
+        
+        if (':' !== $data[1]) {
+            return false;
+        }
+        
+        $lastc = $data[$length-1];
+        if (';' !== $lastc && '}' !== $lastc) {
+            return false;
+        }
+        
+        $token = $data[0];
+        switch ($token) {
+            case 's' :
+                if ('"' !== $data[$length-2]) {
+                    return false;
+                }
+            case 'a' :
+            case 'O' :
+                return (bool) preg_match("/^{$token}:[0-9]+:/s", $data);
+            case 'b' :
+            case 'i' :
+            case 'd' :
+                return (bool) preg_match("/^{$token}:[0-9.E-]+;\$/", $data);
+          }
+          
+          return false;
+      }
 }

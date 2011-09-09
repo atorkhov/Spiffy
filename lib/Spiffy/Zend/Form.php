@@ -38,7 +38,8 @@ class Form extends Zend_Form
         Type::STRING        => 'text',
         Type::TEXT          => 'textarea',
         Type::TIME          => 'text',
-        'TO_ONE'            => 'entity'
+        'TO_ONE'            => 'entity',
+        'TO_MANY'			=> 'entity'
     );
     
     /**
@@ -59,7 +60,8 @@ class Form extends Zend_Form
         Type::STRING        => 'TextBox',
         Type::TEXT          => 'Textarea',
         Type::TIME          => 'TimeTextBox',
-        'TO_ONE'            => 'ForeignKey'
+        'TO_ONE'            => 'Entity',
+        'TO_MANY' 			=> 'Entity'
     );
     
     /**
@@ -107,16 +109,21 @@ class Form extends Zend_Form
         if ($this->getEntity()) {
             $mapping = null;
             $metadata = $this->getEntity()->getClassMetadata();
-
+            
             if (isset($metadata->fieldMappings[$name])) {
                 $mapping = $metadata->getFieldMapping($name); 
-            } elseif (isset($metadata->assocationMappings[$name])) {
+            } elseif (isset($metadata->associationMappings[$name])) {
                 $mapping = $metadata->getAssociationMapping($name);
             }
             
             if (!$element) {
                 if ($mapping['type'] & ClassMetadataInfo::TO_ONE) {
-                    // todo: implement automatic XXX_To_One entity   
+                    $element = $this->_getDefaultElement('TO_ONE');
+                    $options['class'] = $mapping['targetEntity'];
+                } else if ($mapping['type'] & ClassMetadataInfo::TO_MANY) {
+                    $element = $this->_getDefaultElement('TO_MANY');
+                    $options['class'] = $mapping['targetEntity'];
+                    $options['many'] = true;
                 } else {
                     $element = $this->_getDefaultElement($mapping['type']);
                 }
