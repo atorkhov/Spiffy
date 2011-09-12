@@ -1,44 +1,48 @@
 <?php
 namespace Spiffy\Account\Controller;
-use Spiffy\Account\Controller\AbstractAction;
+use Spiffy\Account\Controller\AbstractAction,
+    Spiffy\Account\Form\Activate as ActivateForm;
 
 class Activate extends AbstractAction
 {
-    protected $_data = array();
-    
     public function preDispatch()
     {
-        $_GET['c'] = urlencode(base64_encode(serialize(array(
-        	'username' => 'spiffyjr',
-        	'code' => 'yd5tlq'
-        ))));
+        $account = $this->_helper->get('account');
+        $request = $this->getRequest();
 
-        if (!$this->_request->c) {
-            $this->_helper->redirector->gotoSimple('index', 'index');
-        }
-        
-        if (!$this->_data = @unserialize(base64_decode(urldecode($this->_request->c)))) {
-            $this->_helper->redirector->gotoSimple('index', 'index');
+        if ($request->getParam('c')) {
+            if ($account->activateUser($request->getParam('c'), $this->getUserEntity())) {
+                return $this->_forward('success');
+            }
+            return $this->_foward('invalid');
         }
     }
     
     public function indexAction()
     {
-        $account = $this->_helper->get('account');
-        $doctrine = $this->_helper->get('doctrine');
+        $entity = $this->getUserEntity();
         
-        $repo = $doctrine->getEntityManager()->getRepository($this->getUserEntity());
-        $user = $repo->findOneBy(array('username' => $this->_data['username']));
+        $form = new ActivateForm(new $entity, $this->getFormOptions());
+        $request = $this->getRequest();
         
-        if (!$user) {
-            throw new Exception\UserNotFound('The requested user does not exist');
+        if ($request->getParam('u')) {
+            $form->setDefaults(array('username' => $request->getParam('u')));
         }
         
-        if ($account->activateUser($user, $this->_data['code'])) {
-            return $this->_forward('success');
+        if ($request->isPost() && $form->isValid($request->getPost())) {
+            $account = $this->_helper->get('account');
+            $code = $account->generateUriParameter(
+                $form->getValue('username'),
+                $form->getValue('verificationCode')
+            );
+            
+            if ($account->activateUser($code, $this->getUserEntity())) {
+                return $this->_forward('success');
+            }
+            $form->addErrorMessage('The code you attempted to use was invalid. Please try again.');
         }
         
-        $this->_forward('invalid');
+        $this->view->form = $form;
     }
     
     public function invalidAction()

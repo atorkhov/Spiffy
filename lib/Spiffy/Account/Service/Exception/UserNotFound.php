@@ -15,7 +15,7 @@
 * @license    http://www.spiffyjr.me/license     New BSD License
 */
 
-namespace Spiffy\Account\Controller\Exception;
+namespace Spiffy\Account\Service\Exception;
 use Zend_Exception;
 
 class UserNotFound extends Zend_Exception

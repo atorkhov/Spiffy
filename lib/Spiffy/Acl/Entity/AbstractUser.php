@@ -1,10 +1,10 @@
 <?php
-namespace Spiffy\Auth\Entity;
+namespace Spiffy\Acl\Entity;
 use DateTime,
     Doctrine\ORM\Mapping as ORM,
+    Spiffy\Acl\AbstractEntity,
     Spiffy\Doctrine\Annotations\Filters as Filter,
-    Spiffy\Doctrine\Annotations\Validators as Assert,
-    Spiffy\Doctrine\AbstractEntity;
+    Spiffy\Doctrine\Annotations\Validators as Assert;
 
 /**
  * @ORM\MappedSuperclass

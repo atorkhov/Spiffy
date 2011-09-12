@@ -1,0 +1,15 @@
+imports:
+  auth:
+    resource: auth.yml
+  doctrine:
+    resource: doctrine.yml
+    
+parameters:
+  acl.class: Spiffy\Acl\Service\Acl
+  
+services:
+  acl:
+    class: %acl.class%
+    arguments:
+      - @doctrine
+      - @security

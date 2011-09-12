@@ -141,6 +141,7 @@ class Security implements Zend_Auth_Adapter_Interface
 
         if ($result->isValid()) {
             $this->getUser()->updateLastLogin();
+            $this->getUser()->save();
         }
 
         return $result;

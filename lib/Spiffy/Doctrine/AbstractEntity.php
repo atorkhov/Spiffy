@@ -405,38 +405,7 @@ abstract class AbstractEntity
     {
         $metadata = self::getClassMetadata();
         foreach($metadata->getFieldNames() as $field) {
-            $getter = 'get' . ucfirst($field);
-            if (method_exists($this, $getter)) {
-                $value = $this->$getter();
-            } elseif (isset($this->$field) || property_exists($this, $field)) {
-                if (isset($metadata->fieldMappings[$field])) {
-                    $mapping = $metadata->getFieldMapping($field);
-                } else {
-                    $mapping = $metadata->getAssociationMapping($field);
-                }
-            
-                // for booleans, check if an isser exists
-                if ($mapping && $mapping['type'] == Type::BOOLEAN) {
-                    $isser = 'is' . ucfirst(preg_replace('/^is/', '', $field));
-                    if (method_exists($this, $isser)) {
-                        $value = $this->$isser();
-                    }
-                } else {
-                    $value = $this->$field;
-                }
-            } else {
-                $value = null;
-            }
-            
-            // sanitize field
-            if (is_object($value)) {
-                switch(get_class($value)) {
-                    case 'DateTime':
-                        $value = $value->format('c');
-                        break;
-                }
-            }
-            $result[$field] = $value;
+            $result[$field] = $this->_get($field);
         }
         
         if ($filter) {
@@ -491,6 +460,54 @@ abstract class AbstractEntity
         }
     }
     
+    /**
+     * Get a field's value.
+     * 
+     * @param string $field
+     * @return mixed
+     */
+    protected function _get($field)
+    {
+        $value = null;
+        
+        $getter = 'get' . ucfirst($field);
+        if (method_exists($this, $getter)) {
+            $value = $this->$getter();
+        } elseif (isset($this->$field) || property_exists($this, $field)) {
+            $mapping = $this->getPropertyMapping($field);
+        
+            // for booleans, check if an isser exists
+            if ($mapping && $mapping['type'] == Type::BOOLEAN) {
+                $isser = 'is' . ucfirst(preg_replace('/^is/', '', $field));
+                if (method_exists($this, $isser)) {
+                    $value = $this->$isser();
+                }
+            } else {
+                $value = $this->$field;
+            }
+        } else {
+            $value = null;
+        }
+        
+        // sanitize field
+        if (is_object($value)) {
+            switch(get_class($value)) {
+                case 'DateTime':
+                    $value = $value->format('c');
+                    break;
+            }
+        }
+        
+        return $value;
+    }
+    
+    /**
+     * Set a field's value.
+     * 
+     * @param string $key
+     * @param mixed $value
+     * @throws Exception\InvalidMappingData
+     */
     protected function _set($key, $value)
     {
         $setter = 'set' . ucfirst($key);

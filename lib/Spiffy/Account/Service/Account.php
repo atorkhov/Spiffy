@@ -3,7 +3,8 @@ namespace Spiffy\Account\Service;
 use DateTime,
     Spiffy\Auth\Entity\AbstractUser,
     Spiffy\Auth\Service\Security,
-    Spiffy\Doctrine\Container;
+    Spiffy\Doctrine\Container,
+    Zend_Mail;
 
 class Account
 {
@@ -30,20 +31,49 @@ class Account
     }
     
     /**
-     * Activates a user account if the code is correct.
+     * Activates a user account if the code is correct. Decodes the "code"
+     * to get the username and verification code.
      * 
-     * @param AbstractUser $email
      * @param string $code
+     * @param string $entityClass
+     * @return boolean
      */
-    public function activateUser(AbstractUser $user, $code)
+    public function activateUser($code, $entityClass)
     {
-        if ($user->getVerificationCode() == $code) {
+        $data = unserialize(base64_decode(urldecode($code)));
+        if (!$data || !is_array($data)) {
+            return false;
+        }
+        
+        $repo = $this->_doctrine->getEntityManager()->getRepository($entityClass);
+        $user = $repo->findOneBy(array('username' => $data['username']));
+        if (!$user) {
+            throw new Exception\UserNotFound('The requested user does not exist');
+        }
+        
+        if ($user->getVerificationCode() == $data['code']) {
             $user->setIsActive(true);
             
             return $user->save();
         }
         
         return false;
+    }
+    
+    /**
+     * Generates an encoded uri parameter from a username and
+     * verification code.
+     * 
+     * @param string $username
+     * @param string $code
+     * @return string
+     */
+    public function generateUriParameter($username, $code)
+    {
+        return urlencode(base64_encode(serialize(array(
+        	'username' => $username,
+        	'code' => $code
+        ))));
     }
     
     /**
@@ -59,13 +89,13 @@ class Account
         $user->setJoinDate(new DateTime('now'));
         $user->setVerificationCode($this->_generateVerificationCode());
         $user->updateLastLogin();
-
+        
         return $user->save();
     }
     
     /**
      * Generates a simple verification code that the user can
-     * use to verify their email is accurate.
+     * use to verify their email address is accurate.
      * 
      * @return string
      */

@@ -2,7 +2,7 @@
 namespace Spiffy\Account\Form;
 use Spiffy\Zend\Form as BaseForm;
 
-class Login extends BaseForm
+class Activate extends BaseForm
 {
     /**
      * (non-PHPdoc)
@@ -10,7 +10,8 @@ class Login extends BaseForm
      */
     public function init()
     {
-        $this->add('activationCode');
+        $this->add('username');
+        $this->add('verificationCode');
         $this->add('activate', ($this->_dojoEnabled) ? 'SubmitButton' : 'submit', array(
             'ignore' => true,
             'label' => 'Activate'

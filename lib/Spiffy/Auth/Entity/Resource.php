@@ -16,19 +16,9 @@ class Resource
     protected $id;
     
    /**
-    * @ORM\Column(type="string",length="20")
+    * @ORM\Column(type="string",length="100")
     */
-    protected $module;
-
-   /**
-    * @ORM\Column(type="string",length="20")
-    */
-    protected $controller;
-
-   /**
-    * @ORM\Column(type="string",length="20")
-    */
-    protected $action;
+    protected $name;
     
    /**
     * @ORM\ManyToMany(targetEntity="Role", mappedBy="resources")
