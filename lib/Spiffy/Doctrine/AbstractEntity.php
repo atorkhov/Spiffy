@@ -405,7 +405,7 @@ abstract class AbstractEntity
     {
         $metadata = self::getClassMetadata();
         foreach($metadata->getFieldNames() as $field) {
-            $result[$field] = $this->_get($field);
+            $result[$field] = $this->getValue($field);
         }
         
         if ($filter) {
@@ -466,7 +466,7 @@ abstract class AbstractEntity
      * @param string $field
      * @return mixed
      */
-    protected function _get($field)
+    public function getValue($field)
     {
         $value = null;
         

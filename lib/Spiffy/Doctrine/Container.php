@@ -258,41 +258,6 @@ class Container
     }
     
     /**
-    * Gets multi options for Spiffy form elements.
-    *
-    * @param string $entityClass
-    * @param Closure|null $qbClosure
-    * @param string $emName
-    * @return array
-    */
-    public function getMultiOptions($entityClass, $qbClosure = null, $emName = null)
-    {
-        if (!$qbClosure instanceof Closure) {
-            $qbClosure = function ($er)
-            {
-                return $er->createQueryBuilder('entity');
-            };
-        }
-        
-        $options = array();
-    
-        $entityManager = $this->getEntityManager($emName);
-        $mdata = $entityManager->getClassMetadata($entityClass);
-        $repository = $entityManager->getRepository($entityClass);
-    
-        $qb = call_user_func($qbClosure, $repository);
-        foreach ($qb->getQuery()->execute() as $row) {
-            if (!is_object($row)) {
-                throw new Exception\InvalidResult('row result must be an object');
-            }
-    
-            $options[serialize($mdata->getIdentifierValues($row))] = (string) $row;
-        }
-        
-        return $options;
-    }
-
-    /**
      * Prepares a cache instance.
      * 
      * @todo add additional parameters for configuring memcache.

@@ -1,29 +1,29 @@
 <?php
-class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
+class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitMulti
 {
-    /**
+   /**
      * Default helper.
      * @var string
      */
-    protected $_defaultHelper = 'formSelect';
+    protected $_defaultHelper = 'ComboBox';
     
     /**
      * Multiple expanded helper.
      * @var string
      */
-    protected $_multipleExpandedHelper = 'formMultiCheckbox';
+    protected $_multipleExpandedHelper = 'CheckBox';
 
    /**
     * Expanded helper.
     * @var string
     */
-    protected $_expandedHelper = 'formRadio';
+    protected $_expandedHelper = 'RadioButton';
     
     /**
      * Multiple helper.
      * @var string
      */
-    protected $_multipleHelper = 'formSelect';
+    protected $_multipleHelper = 'MultiSelect';
     
     /**
      * Entity class.
