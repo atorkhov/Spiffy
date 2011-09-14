@@ -1,11 +1,16 @@
 parameters:
-  front.factory.class: Spiffy\Zend\Service\Front
+  cacheManager.factory.class: Spiffy\Zend\Service\CacheManager
+  frontController.factory.class: Spiffy\Zend\Service\FrontController
   layout.factory.class: Spiffy\Zend\Service\Layout
   view.factory.class: Spiffy\Zend\Service\View
 
 services:
+  cacheManager:
+    factory_class: %cacheManager.factory.class%
+    factory_method: get
+  
   front:
-    factory_class: %front.factory.class%
+    factory_class: %frontController.factory.class%
     factory_method: get
     
   layout:

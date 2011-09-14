@@ -17,7 +17,7 @@
 
 namespace Spiffy\Zend\Service;
 
-class Front extends AbstractServiceResource
+class FrontController extends AbstractServiceResource
 {
 	public function get() 
 	{
