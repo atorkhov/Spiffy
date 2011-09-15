@@ -387,7 +387,7 @@ abstract class AbstractEntity
     public function isValid($field = null)
     {
         $fi = self::getFilterInput();
-        $fi->setData($this->toArray());
+        $fi->setData($this->toArray(false));
         
         return $fi->isValid($field);
     }
@@ -432,10 +432,7 @@ abstract class AbstractEntity
                 ($mapping['type'] & ClassMetadataInfo::TO_ONE)
             ) {
                 if ($mapping['type'] & ClassMetadataInfo::TO_ONE) {
-                    $value = $this->getEntityManager()->getReference(
-                        $mapping['targetEntity'],
-                        $this->_normalize($value)
-                    );
+                    $value = $this->_normalize($value, $mapping['targetEntity']);
                 } else {
                     if (!is_array($value)) {
                         throw new Exception\InvalidMappingData(
@@ -448,10 +445,7 @@ abstract class AbstractEntity
                     }
 
                     foreach($value as &$v) {
-                        $v = $this->getEntityManager()->getReference(
-                            $mapping['targetEntity'],
-                            $this->_normalize($v)
-                        );
+                        $v = $this->_normalize($value, $mapping['targetEntity']);
                     }
                 }
             }
@@ -482,7 +476,9 @@ abstract class AbstractEntity
                 if (method_exists($this, $isser)) {
                     $value = $this->$isser();
                 }
-            } else {
+            }
+            
+            if (!$value) {
                 $value = $this->$field;
             }
         } else {
@@ -494,6 +490,13 @@ abstract class AbstractEntity
             switch(get_class($value)) {
                 case 'DateTime':
                     $value = $value->format('c');
+                    break;
+                default:
+                    if (method_exists($value, '__toString')) {
+                        $value = (string) $value; 
+                    } else {
+                        $value = "(object:" . get_class($value) . ")";
+                    }
                     break;
             }
         }
@@ -531,12 +534,14 @@ abstract class AbstractEntity
         }
     }
     
-    protected function _normalize($value)
+    protected function _normalize($value, $targetEntity)
     {
-        if (is_object($value) || is_numeric($value)) {
+        if (is_object($value)) {
             ; // intentionally left blank
+        } else if (is_numeric($value)) {
+            $value = $this->getEntityManager()->getReference($targetEntity, $value);
         } else if ($this->_isSerialized($value)) {
-            $value = unserialize($value);
+            $value = $this->getEntityManager()->getReference($targetEntity, unserialize($value));
         }
         
         return $value;
