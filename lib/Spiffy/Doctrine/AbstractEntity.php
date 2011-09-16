@@ -319,7 +319,12 @@ abstract class AbstractEntity
                 }
                 
             }
-            self::$_filterInput__[$self] = new Zend_Filter_Input($filters, $validators);
+            self::$_filterInput__[$self] = new Zend_Filter_Input(
+                $filters,
+                $validators,
+                null,
+                array('escapeFilter' => 'StringTrim') 
+            );
         }
         return self::$_filterInput__[$self];
     }
