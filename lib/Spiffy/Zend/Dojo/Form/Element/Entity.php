@@ -5,7 +5,7 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
      * Default helper.
      * @var string
      */
-    protected $_defaultHelper = 'ComboBox';
+    protected $_defaultHelper = 'FilteringSelect';
     
     /**
      * Multiple expanded helper.
