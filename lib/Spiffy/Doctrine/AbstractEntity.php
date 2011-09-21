@@ -404,13 +404,29 @@ abstract class AbstractEntity
      * (which is an array in the case of composite keys).
      *
      * @param boolean $filter
+     * @param boolean $includeNull
+     * @param array $associations
      * @return array
      */
-    public function toArray($filter = true)
+    public function toArray($filter = true, $includeNull = true, array $associations = array())
     {
         $metadata = self::getClassMetadata();
+        
+        // regular fields
         foreach($metadata->getFieldNames() as $field) {
-            $result[$field] = $this->getValue($field);
+            $value = $this->getValue($field, $includeNull);
+            
+            if ($includeNull || $value) {
+                $result[$field] = $value;
+            }
+        }
+        
+        // associations
+        foreach($associations as $association) {
+            if ($am = $metadata->getAssociationMapping($association)) {
+                $result[$association] = $this->getValue($association)
+                                              ->toArray($filter, $includeNull);
+            }
         }
         
         if ($filter) {
@@ -492,17 +508,16 @@ abstract class AbstractEntity
         
         // sanitize field
         if (is_object($value)) {
-            switch(get_class($value)) {
-                case 'DateTime':
-                    $value = $value->format('c');
-                    break;
-                default:
-                    if (method_exists($value, '__toString')) {
-                        $value = (string) $value; 
-                    } else {
-                        $value = "(object:" . get_class($value) . ")";
-                    }
-                    break;
+            if (get_class($value) == 'DateTime') {
+                $value = $value->format('c');
+            } elseif ($value instanceof AbstractEntity) {
+                
+            } else {
+                if (method_exists($value, '__toString')) {
+                    $value = (string) $value; 
+                } else {
+                    $value = "(object:" . get_class($value) . ")";
+                }
             }
         }
         
