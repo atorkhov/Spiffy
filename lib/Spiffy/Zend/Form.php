@@ -153,7 +153,13 @@ class Form extends Zend_Form
             );
         }
         
-        if (!array_key_exists('label', $options)) {
+        if ($element === 'hidden') {
+            $options['decorators'] = array(
+            	'ViewHelper'
+            );
+        }
+        
+        if (!array_key_exists('label', $options) && $element != 'hidden') {
             $options['label'] = ucfirst(preg_replace('/([a-z])([A-Z])/', '$1 $2', $name));
         }
         
