@@ -416,7 +416,7 @@ abstract class AbstractEntity
         foreach($metadata->getFieldNames() as $field) {
             $value = $this->getValue($field, $includeNull);
             
-            if ($includeNull || $value) {
+            if ($includeNull || null !== $value) {
                 $result[$field] = $value;
             }
         }
