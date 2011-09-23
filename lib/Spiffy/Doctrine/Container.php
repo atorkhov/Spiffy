@@ -17,15 +17,15 @@
 
 namespace Spiffy\Doctrine;
 
-use Closure;
-use Doctrine\Common\Annotations\AnnotationReader;
-use Doctrine\Common\Annotations\AnnotationRegistry;
-use Doctrine\Common\EventManager;
-use Doctrine\DBAL\DriverManager;
-use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
-use Doctrine\ORM\Configuration;
-use Doctrine\ORM\EntityManager;
-use ReflectionClass;
+use Closure,
+    Doctrine\Common\Annotations\AnnotationReader,
+    Doctrine\Common\Annotations\AnnotationRegistry,
+    Doctrine\Common\EventManager,
+    Doctrine\DBAL\DriverManager,
+    Doctrine\ORM\Mapping\Driver\AnnotationDriver,
+    Doctrine\ORM\Configuration,
+    Doctrine\ORM\EntityManager,
+    ReflectionClass;
 
 class Container
 {
