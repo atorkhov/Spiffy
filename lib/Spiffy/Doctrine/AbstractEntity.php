@@ -424,8 +424,12 @@ abstract class AbstractEntity
         // associations
         foreach($associations as $association) {
             if ($am = $metadata->getAssociationMapping($association)) {
-                $result[$association] = $this->getValue($association)
-                                              ->toArray($filter, $includeNull);
+                $assValue = $this->getValue($association); // lulz
+                
+                if ($assValue instanceof AbstractEntity) {
+                    $result[$association] = $this->getValue($association)
+                                                 ->toArray($filter, $includeNull);
+                }
             }
         }
         
