@@ -116,15 +116,19 @@ class Form extends Zend_Form
                 $mapping = $metadata->getAssociationMapping($name);
             }
             
-            if (!$element) {
+            if (!$element || strtolower($element) == 'entity') {
                 if ($mapping['type'] & ClassMetadataInfo::TO_ONE) {
-                    $element = $this->_getDefaultElement('TO_ONE');
+                    if (!$element) {
+                        $element = $this->_getDefaultElement('TO_ONE');
+                    }
                     $options['class'] = $mapping['targetEntity'];
                 } else if ($mapping['type'] & ClassMetadataInfo::TO_MANY) {
-                    $element = $this->_getDefaultElement('TO_MANY');
+                    if (!$element) {
+                        $element = $this->_getDefaultElement('TO_MANY');
+                    }
                     $options['class'] = $mapping['targetEntity'];
                     $options['many'] = true;
-                } else {
+                } else if (!$element) {
                     $element = $this->_getDefaultElement($mapping['type']);
                 }
             }
