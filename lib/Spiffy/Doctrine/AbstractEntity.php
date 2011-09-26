@@ -470,7 +470,7 @@ abstract class AbstractEntity
                     }
 
                     foreach($value as &$v) {
-                        $v = $this->_normalize($value, $mapping['targetEntity']);
+                        $v = $this->_normalize($v, $mapping['targetEntity']);
                     }
                 }
             }
