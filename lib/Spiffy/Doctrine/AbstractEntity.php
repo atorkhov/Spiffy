@@ -449,9 +449,6 @@ abstract class AbstractEntity
      */
     public function fromArray(array $data)
     {
-        echo '<pre>';
-        print_r($data);
-        
         foreach($data as $key => $value) {
             $mapping = $this->getPropertyMapping($key);
 
