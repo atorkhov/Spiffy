@@ -449,6 +449,9 @@ abstract class AbstractEntity
      */
     public function fromArray(array $data)
     {
+        echo '<pre>';
+        print_r($data);
+        
         foreach($data as $key => $value) {
             $mapping = $this->getPropertyMapping($key);
 
@@ -472,9 +475,31 @@ abstract class AbstractEntity
                     foreach($value as &$v) {
                         $v = $this->_normalize($v, $mapping['targetEntity']);
                     }
+                    
+                    if (!$mapping['isOwningSide']) {
+                        $em = $this->getEntityManager();
+                        $targetMapping = $em->getClassMetadata($mapping['targetEntity']);
+                        
+                        $ownedFieldName = null;
+                        foreach($targetMapping->associationMappings as $am) {
+                            if ($am['targetEntity'] == $mapping['sourceEntity']) {
+                                $ownedFieldName = $am['fieldName'];
+                                break;
+                            }    
+                        }
+                        
+                        if ($ownedFieldName) {
+                            foreach($value as &$v) {
+                                // todo: check to see if Doctrine makes a query for each reference
+                                //       I sure hope not or that will be a nasty performance hit
+                                $entity = $this->_normalize($v, $mapping['targetEntity']);
+                                $entity->$ownedFieldName = $this;
+                            }
+                        }
+                    }
                 }
             }
-
+            
             $this->_set($key, $value);
         }
     }
