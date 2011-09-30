@@ -68,8 +68,18 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
         
         $this->_entityManager = Zend_Registry::get('Spiffy_Doctrine')->getEntityManager();
         $this->options = $this->_getOptions();
+
+        if ($this->multiple) {
+            $this->_isArray = true;
+        }
     }
     
+    /**
+     * Gets the options for the element.
+     * 
+     * @throws Exception\InvalidResult
+     * @return array
+     */
     protected function _getOptions()
     {
         $qb = $this->getQueryBuilder();
