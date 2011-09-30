@@ -382,6 +382,26 @@ abstract class AbstractEntity
     }
     
     /**
+     * Gets the serialized identifier for this entity. If the entity is identified
+     * by a single field then the value of that field is returned instead.
+     * 
+     * @return string
+     */
+    public function getEntityIdentifier()
+    {
+        $mdata = $this->getClassMetadata();
+        $id = $mdata->getIdentifierValues($this);
+        
+        if (count($id) > 1) {
+            $id = serialize($id);
+        } else {
+            $id = current($id);
+        }
+        
+        return $id;
+    }
+    
+    /**
      * Uses annotation validators to determine if the entity is valid.
      * The validator chain is cached and lazy-loaded to be as 
      * performant as possible.
@@ -421,14 +441,24 @@ abstract class AbstractEntity
             }
         }
         
-        // associations
-        foreach($associations as $association) {
-            if ($am = $metadata->getAssociationMapping($association)) {
-                $assValue = $this->getValue($association); // lulz
+        // generic associations get the serialized identifier value
+        foreach($metadata->getAssociationMappings() as $assName => $assData) {  // lulz
+            if (in_array($assName, $associations)) {
+                $assValue = $this->getValue($assName); // lulz
                 
                 if ($assValue instanceof AbstractEntity) {
-                    $result[$association] = $this->getValue($association)
-                                                 ->toArray($filter, $includeNull);
+                    $result[$assName] = $this->getValue($assName)
+                                             ->toArray($filter, $includeNull);
+                }    
+            } else if(isset($assData['targetToSourceKeyColumns'])) {
+                $value = array();
+                foreach($assData['targetToSourceKeyColumns'] as $target => $source) {
+                    $value[$target] = $this->getValue($source);
+                }
+                if (count($value) > 1) {
+                    $result[$assName] = serialize($value);
+                } else {
+                    $result[$assName] = current($value);
                 }
             }
         }
@@ -537,7 +567,9 @@ abstract class AbstractEntity
             if (get_class($value) == 'DateTime') {
                 $value = $value->format('c');
             } elseif ($value instanceof AbstractEntity) {
-                
+                ;
+            } elseif ($value instanceof Collection) {
+                ;
             } else {
                 if (method_exists($value, '__toString')) {
                     $value = (string) $value; 
@@ -580,6 +612,12 @@ abstract class AbstractEntity
         }
     }
     
+    /**
+     * Normalizes a value for entity insertion.
+     * 
+     * @param mixed $value
+     * @param string $targetEntity
+     */
     protected function _normalize($value, $targetEntity)
     {
         if (is_object($value)) {
@@ -587,7 +625,11 @@ abstract class AbstractEntity
         } else if (is_numeric($value)) {
             $value = $this->getEntityManager()->getReference($targetEntity, $value);
         } else if ($this->_isSerialized($value)) {
-            $value = $this->getEntityManager()->getReference($targetEntity, unserialize($value));
+            $value = unserialize($value);
+            
+            if ($value !== null) {
+                $value = $this->getEntityManager()->getReference($targetEntity, $value);
+            }
         }
         
         return $value;

@@ -1,35 +1,36 @@
 <?php
 class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitMulti
 {
-   /**
-     * Default helper.
-     * @var string
-     */
-    protected $_defaultHelper = 'FilteringSelect';
     
     /**
-     * Multiple expanded helper.
+     * Helper used to render element.
      * @var string
      */
-    protected $_multipleExpandedHelper = 'CheckBox';
+    public $helper = 'formEntity';
+    
+    /**
+     * flag: is the element expanded?
+     * @var boolean
+     */
+    public $expanded = false;
+    
+    /**
+     * flag: is the element multiple?
+     * @var boolean
+     */
+    public $multiple = false;
 
-   /**
-    * Expanded helper.
-    * @var string
-    */
-    protected $_expandedHelper = 'RadioButton';
-    
-    /**
-     * Multiple helper.
-     * @var string
-     */
-    protected $_multipleHelper = 'MultiSelect';
-    
     /**
      * Entity class.
      * @var string
      */
     protected $_class;
+    
+    /**
+     * Empty label.
+     * @var string
+     */
+    protected $_empty;
     
     /**
      * Sets the property to read for the class.
@@ -38,22 +39,10 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
     protected $_property;
     
     /**
-     * flag: is field expanded?
-     * @var boolean
+     * Doctrine entity manager
+     * @var Doctrine\ORM\EntityManager
      */
-    protected $_expanded = false;
-    
-    /**
-     * flag: is field multiple?
-     * @var boolean
-     */
-    protected $_multiple = false;
-    
-    /**
-     * Spiffy container.
-     * @var Spiffy\Doctrine\Container
-     */
-    protected $_doctrine;
+    protected $_entityManager;
 
     /**
      * Query builder.
@@ -77,9 +66,7 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
             throw new Zend_Form_Element_Exception(get_class($this) . ' requires a class');
         }
         
-        $this->helper = $this->_defaultHelper;
-
-        $this->_doctrine = Zend_Registry::get('Spiffy_Doctrine');
+        $this->_entityManager = Zend_Registry::get('Spiffy_Doctrine')->getEntityManager();
         $this->options = $this->_getOptions();
     }
     
@@ -95,7 +82,11 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
         
         $options = array();
         
-        $entityManager = $this->_doctrine->getEntityManager();
+        if ($this->getEmpty()) {
+            $options[serialize(null)] = $this->getEmpty();
+        }
+        
+        $entityManager = $this->_entityManager;
         $mdata = $entityManager->getClassMetadata($this->getClass());
         $repository = $entityManager->getRepository($this->getClass());
         
@@ -144,46 +135,6 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
         return $this->_property;
     }
 
-   /**
-    * Set the expanded flag.
-    *
-    * @param boolean $expanded
-    */
-    public function setExpanded($expanded)
-    {
-        $this->_expanded = $expanded;
-    }
-    
-    /**
-     * Get the expanded flag.
-     *
-     * @return boolean
-     */
-    public function getExpanded()
-    {
-        return $this->_expanded;
-    }
-    
-    /**
-     * Set the multiple flag.
-     * 
-     * @param boolean $multiple
-     */
-    public function setMultiple($multiple)
-    {
-        $this->_multiple = $multiple;
-    }
-    
-    /**
-     * Get the multiple flag.
-     * 
-     * @return boolean
-     */
-    public function getMultiple()
-    {
-        return $this->_multiple;
-    }
-    
     /**
      * Get entity class.
      */
@@ -200,6 +151,24 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
     public function setClass($class)
     {
         $this->_class = $class;
+    }
+    
+    /**
+    * Set empty label.
+    *
+    * @param string $empty
+    */
+    public function setEmpty($empty)
+    {
+        $this->_empty = $empty;
+    }
+    
+    /**
+     * Get empty label.
+     */
+    public function getEmpty()
+    {
+        return $this->_empty;
     }
 
     /**
@@ -220,43 +189,5 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
     public function setQueryBuilder(Closure $qb)
     {
         $this->_queryBuilder = $qb;
-    }
-    
-   /**
-    * Render form element
-    *
-    * @param  Zend_View_Interface $view
-    * @return string
-    */
-    public function render(Zend_View_Interface $view = null)
-    {
-        if ($this->getMultiple() && $this->getExpanded()) {
-            $this->helper = $this->_multipleExpandedHelper;
-            $this->_isArray = true;
-        } else if ($this->getMultiple()) {
-            $this->helper = $this->_multipleHelper;
-            $this->_isArray = true;
-        } else if ($this->getExpanded()) {
-            $this->helper = $this->_expandedHelper;
-            $this->_isArray = false;
-        } else {
-            $this->helper = $this->_defaultHelper;
-            $this->_isArray = false;
-        }
-        
-        if ($this->_isPartialRendering) {
-            return '';
-        }
-    
-        if (null !== $view) {
-            $this->setView($view);
-        }
-    
-        $content = '';
-        foreach ($this->getDecorators() as $decorator) {
-            $decorator->setElement($this);
-            $content = $decorator->render($content);
-        }
-        return $content;
     }
 }

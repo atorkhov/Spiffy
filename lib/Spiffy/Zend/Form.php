@@ -2,6 +2,7 @@
 namespace Spiffy\Zend;
 use Doctrine\DBAL\Types\Type,
     Doctrine\ORM\Mapping\ClassMetadataInfo,
+    Spiffy\Doctrine\AbstractEntity,
     Zend_Dojo,
     Zend_Form,
     Zend_Registry;
@@ -89,9 +90,7 @@ class Form extends Zend_Form
         
         parent::__construct($options);
         
-        if ($this->getEntity()) {
-            $this->setDefaults($this->getEntity()->toArray(false));
-        }
+        $this->_setDefaultsFromEntity();
     }
     
     /**
@@ -265,13 +264,40 @@ class Form extends Zend_Form
             $entity = new $entity();
         }
         
-        //if (!$entity instanceof AbstractEntity) {
-        //    throw new Form\Exception\InvalidEntity(
-        //    	'setEntity() expects instance of Spiffy\Doctrine\AbstractEntity'
-        //    );
-        //}
-        $this->setDefaults($entity->toArray(false));
+        if (!$entity instanceof AbstractEntity) {
+            throw new Form\Exception\InvalidEntity(
+            	'setEntity() expects instance of Spiffy\Doctrine\AbstractEntity'
+            );
+        }
+        
         $this->_entity = $entity;
+        $this->_setDefaultsFromEntity();
+    }
+    
+    /**
+     * Set form defaults from entity.
+     */
+    protected function _setDefaultsFromEntity()
+    {
+        if ($this->getEntity()) {
+            // handles standard fields and ToOne
+            $this->setDefaults($this->getEntity()->toArray(false));
+            
+            // custom code to handle ToMany fields
+            $mdata = $this->getEntity()->getClassMetadata();
+            foreach($mdata->associationMappings as $assName => $assMap) { // lulz, love assMaps
+                if (($element = $this->getElement($assName)) &&    
+                    ($assMap['type'] & ClassMetadataInfo::TO_MANY)
+                ) {
+                    $defaults = array();
+                    $collection = $this->getEntity()->getValue($element->getName());
+                    foreach($collection as $entity) {
+                        $defaults[] = $entity->getEntityIdentifier();
+                    }
+                    $this->setDefaults(array($assName => $defaults));
+                }
+            }
+        }
     }
     
     /**
