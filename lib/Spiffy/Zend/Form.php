@@ -291,10 +291,12 @@ class Form extends Zend_Form
                 ) {
                     $defaults = array();
                     $collection = $this->getEntity()->getValue($element->getName());
-                    foreach($collection as $entity) {
-                        $defaults[] = $entity->getEntityIdentifier();
+                    if ($collection) {
+                        foreach($collection as $entity) {
+                            $defaults[] = $entity->getEntityIdentifier();
+                        }
+                        $this->setDefaults(array($assName => $defaults));
                     }
-                    $this->setDefaults(array($assName => $defaults));
                 }
             }
         }

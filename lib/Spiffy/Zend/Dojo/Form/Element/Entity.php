@@ -101,25 +101,27 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
         $repository = $entityManager->getRepository($this->getClass());
         
         $qb = call_user_func($qb, $repository);
-        foreach ($qb->getQuery()->execute() as $row) {
-            if (!is_object($row)) {
-                throw new Exception\InvalidResult('row result must be an object');
-            }
-        
-            if ($this->getProperty()) {
-                $value = $row->getValue($this->getProperty());
-            } else {
-                $value = (string) $row;
-            }
+        if ($qb) {
+            foreach ($qb->getQuery()->execute() as $row) {
+                if (!is_object($row)) {
+                    throw new Exception\InvalidResult('row result must be an object');
+                }
             
-            $id = null;
-            $idValues = $mdata->getIdentifierValues($row);
-            if (count($idValues) == 1) {
-                $id = current($idValues);
-            } else {
-                $id = serialize($idValues);
+                if ($this->getProperty()) {
+                    $value = $row->getValue($this->getProperty());
+                } else {
+                    $value = (string) $row;
+                }
+                
+                $id = null;
+                $idValues = $mdata->getIdentifierValues($row);
+                if (count($idValues) == 1) {
+                    $id = current($idValues);
+                } else {
+                    $id = serialize($idValues);
+                }
+                $options[$id] = $value;
             }
-            $options[$id] = $value;
         }
         
         return $options;
