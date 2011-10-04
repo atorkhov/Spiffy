@@ -434,7 +434,7 @@ abstract class AbstractEntity
         
         // regular fields
         foreach($metadata->getFieldNames() as $field) {
-            $value = $this->getValue($field, $includeNull);
+            $value = $this->_get($field, $includeNull);
             
             if ($includeNull || null !== $value) {
                 $result[$field] = $value;
@@ -444,16 +444,16 @@ abstract class AbstractEntity
         // generic associations get the serialized identifier value
         foreach($metadata->getAssociationMappings() as $assName => $assData) {  // lulz
             if (in_array($assName, $associations)) {
-                $assValue = $this->getValue($assName); // lulz
+                $assValue = $this->_get($assName); // lulz
                 
                 if ($assValue instanceof AbstractEntity) {
-                    $result[$assName] = $this->getValue($assName)
+                    $result[$assName] = $this->_get($assName)
                                              ->toArray($filter, $includeNull);
                 }    
             } else if(isset($assData['targetToSourceKeyColumns'])) {
                 $value = array();
                 foreach($assData['targetToSourceKeyColumns'] as $target => $source) {
-                    $value[$target] = $this->getValue($source);
+                    $value[$target] = $this->_get($source);
                 }
                 if (count($value) > 1) {
                     $result[$assName] = serialize($value);
@@ -488,13 +488,7 @@ abstract class AbstractEntity
             ) {
                 if ($mapping['type'] & ClassMetadataInfo::TO_ONE) {
                     $value = $this->_normalize($value, $mapping['targetEntity']);
-                } else {
-                    if (!is_array($value)) {
-                        throw new Exception\InvalidMappingData(
-                            'Data for ManyToMany relations must be an array'
-                        );
-                    }
-                    
+                } else if (is_array($value)) {
                     if (!$this->$key instanceof Collection) {
                         $this->$key = new ArrayCollection;
                     }
@@ -537,7 +531,7 @@ abstract class AbstractEntity
      * @param string $field
      * @return mixed
      */
-    public function getValue($field)
+    public function _get($field)
     {
         $value = null;
         
@@ -595,13 +589,7 @@ abstract class AbstractEntity
         if (method_exists($this, $setter)) {
             $this->$setter($value);
         } elseif (isset($this->$key) || property_exists($this, $key)) {
-            if ($this->$key instanceof Collection) {
-                if (!is_array($value)) {    
-                    throw new Exception\InvalidMappingData(
-                        'Data for Collections must be an array'
-                    );
-                }
-                
+            if ($this->$key instanceof Collection && is_array($value)) {
                 $this->$key->clear();
                 foreach($value as $v) {
                     $this->$key->add($v);

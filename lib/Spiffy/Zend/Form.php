@@ -120,15 +120,21 @@ class Form extends Zend_Form
                     if (!$element) {
                         $element = $this->_getDefaultElement('TO_ONE');
                     }
-                    $options['class'] = $mapping['targetEntity'];
+                    if (!isset($options['class'])) {
+                        $options['class'] = $mapping['targetEntity'];
+                    }
                 } else if ($mapping['type'] & ClassMetadataInfo::TO_MANY) {
                     if (!$element) {
                         $element = $this->_getDefaultElement('TO_MANY');
                     }
-                    $options['class'] = $mapping['targetEntity'];
+                    if (!isset($options['class'])) {
+                        $options['class'] = $mapping['targetEntity'];
+                    }
                     $options['many'] = true;
                 } else if (!$element) {
-                    $element = $this->_getDefaultElement($mapping['type']);
+                    if (!$element) {
+                        $element = $this->_getDefaultElement($mapping['type']);
+                    }
                 }
             }
             
@@ -290,7 +296,7 @@ class Form extends Zend_Form
                     ($assMap['type'] & ClassMetadataInfo::TO_MANY)
                 ) {
                     $defaults = array();
-                    $collection = $this->getEntity()->getValue($element->getName());
+                    $collection = $this->getEntity()->_get($element->getName());
                     if ($collection) {
                         foreach($collection as $entity) {
                             $defaults[] = $entity->getEntityIdentifier();
