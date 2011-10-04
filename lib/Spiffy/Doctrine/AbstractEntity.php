@@ -622,9 +622,27 @@ abstract class AbstractEntity
         
         return $value;
     }
+    
+    /**
+     * Removes the entity from persistant storage.
+     * 
+     * @param boolean $flush
+     * @return true
+     */
+    public function remove($flush = true)
+    {
+        $em = self::getEntityManager();
+        $em->remove($this);
+        
+        if ($flush) {
+            $em->flush();
+        }
+        
+        return true;
+    }
 
     /**
-     * Save the entity to persistance storage.
+     * Save the entity to persistant storage.
      * 
      * @param boolean $flush
      * @return true
