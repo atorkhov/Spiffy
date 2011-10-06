@@ -105,14 +105,17 @@ class Form extends Zend_Form
      */
     public function add($name, $element = null, array $options = array())
     {
-        if ($this->getEntity()) {
+        $entity = isset($options['entity']) ? $this->_normEntity($options['entity']) : $this->getEntity();
+        $property = isset($options['property']) ? $options['property'] : $name;
+        
+        if ($entity) {
             $mapping = null;
-            $metadata = $this->getEntity()->getClassMetadata();
+            $metadata = $entity->getClassMetadata();
             
-            if (isset($metadata->fieldMappings[$name])) {
-                $mapping = $metadata->getFieldMapping($name); 
-            } elseif (isset($metadata->associationMappings[$name])) {
-                $mapping = $metadata->getAssociationMapping($name);
+            if (isset($metadata->fieldMappings[$property])) {
+                $mapping = $metadata->getFieldMapping($property); 
+            } elseif (isset($metadata->associationMappings[$property])) {
+                $mapping = $metadata->getAssociationMapping($property);
             }
             
             if (!$element || strtolower($element) == 'entity') {
@@ -138,16 +141,18 @@ class Form extends Zend_Form
                 }
             }
             
-            $options['filters'] = $this->getEntity()->getPropertyFilters($name);
-            $options['validators'] = $this->getEntity()->getPropertyValidators($name);
+            $options['filters'] = $entity->getPropertyFilters($property);
+            $options['validators'] = $entity->getPropertyValidators($property);
             
-            if (in_array('NotEmpty', $options['validators'])) {
-                $options['required'] = true;
-            } else {
-                foreach($options['validators'] as $validator) {
-                    if (is_array($validator) && $validator['validator'] == 'NotEmpty') {
-                        $options['required'] = true;
-                        break;
+            if (!isset($options['required'])) {
+                if (in_array('NotEmpty', $options['validators'])) {
+                    $options['required'] = true;
+                } else {
+                    foreach($options['validators'] as $validator) {
+                        if (is_array($validator) && $validator['validator'] == 'NotEmpty') {
+                            $options['required'] = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -156,8 +161,10 @@ class Form extends Zend_Form
         if (!$element) {
             throw new Form\Exception\NoFormElement(
                 sprintf(
-                	'No form element was specified for "%s" and one not be determined automatically',
-                	$name
+                	'No form element was specified for "%s" and one not be determined automatically' . 
+                	' from "%s".',
+                	$name,
+                	get_class($entity)
             	)
             );
         }
@@ -266,6 +273,18 @@ class Form extends Zend_Form
      */
     public function setEntity($entity)
     {
+        $this->_entity = $this->_normEntity($entity);
+        $this->_setDefaultsFromEntity();
+    }
+    
+    /**
+     * Normalizes an entity and returns AbstractEntity.
+
+     * @param string|AbstractEntity $entity
+     * @return AbstractEntity
+     */
+    protected function _normEntity($entity)
+    {
         if (is_string($entity)) {
             $entity = new $entity();
         }
@@ -276,8 +295,7 @@ class Form extends Zend_Form
             );
         }
         
-        $this->_entity = $entity;
-        $this->_setDefaultsFromEntity();
+        return $entity;
     }
     
     /**
