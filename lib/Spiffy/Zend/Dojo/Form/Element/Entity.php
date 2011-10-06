@@ -108,7 +108,7 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
                 }
             
                 if ($this->getProperty()) {
-                    $value = $row->getValue($this->getProperty());
+                    $value = $row->_get($this->getProperty());
                 } else {
                     $value = (string) $row;
                 }
