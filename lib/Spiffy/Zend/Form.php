@@ -305,7 +305,8 @@ class Form extends Zend_Form
     {
         if ($this->getEntity()) {
             // handles standard fields and ToOne
-            $this->setDefaults($this->getEntity()->toArray(false));
+            $defaults = $this->getEntity()->toArray(false);
+            $this->setDefaults($defaults);
             
             // custom code to handle ToMany fields
             $mdata = $this->getEntity()->getClassMetadata();

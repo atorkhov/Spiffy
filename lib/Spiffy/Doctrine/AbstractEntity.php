@@ -15,6 +15,8 @@ use Doctrine\Common\Annotations\AnnotationReader,
 
 abstract class AbstractEntity
 {
+    const ENCODE_PREFIX = 'base64:';
+    
     const FILTER = 1;
     const VALIDATOR = 2;
     
@@ -382,23 +384,28 @@ abstract class AbstractEntity
     }
     
     /**
-     * Gets the serialized identifier for this entity. If the entity is identified
-     * by a single field then the value of that field is returned instead.
+     * Gets the encoded value as ran through the
+     *  
+     * @param mixed $value
+     * @return string
+     */
+    public static function getEncodedValue($value)
+    {
+        return self::_encode($value);
+    }
+    
+    /**
+     * Gets the encoded identifier for this entity.
      * 
      * @return string
      */
     public function getEntityIdentifier()
     {
-        $mdata = $this->getClassMetadata();
-        $id = $mdata->getIdentifierValues($this);
-        
-        if (count($id) > 1) {
-            $id = serialize($id);
-        } else {
-            $id = current($id);
+        $id = array();
+        foreach($this->getClassMetadata()->identifier as $field) {
+            $id[$field] = (string) $this->_get($field);
         }
-        
-        return $id;
+        return $this->_encode($id);
     }
     
     /**
@@ -455,11 +462,7 @@ abstract class AbstractEntity
                 foreach($assData['targetToSourceKeyColumns'] as $target => $source) {
                     $value[$target] = $this->_get($source);
                 }
-                if (count($value) > 1) {
-                    $result[$assName] = serialize($value);
-                } else {
-                    $result[$assName] = current($value);
-                }
+                $result[$assName] = $this->getEncodedValue($value);
             }
         }
         
@@ -487,14 +490,14 @@ abstract class AbstractEntity
                 ($mapping['type'] & ClassMetadataInfo::TO_ONE)
             ) {
                 if ($mapping['type'] & ClassMetadataInfo::TO_ONE) {
-                    $value = $this->_normalize($value, $mapping['targetEntity']);
+                    $value = $this->_decode($value, $mapping['targetEntity']);
                 } else if (is_array($value)) {
                     if (!$this->$key instanceof Collection) {
                         $this->$key = new ArrayCollection;
                     }
 
                     foreach($value as &$v) {
-                        $v = $this->_normalize($v, $mapping['targetEntity']);
+                        $v = $this->_decode($v, $mapping['targetEntity']);
                     }
                     
                     if (!$mapping['isOwningSide']) {
@@ -513,7 +516,7 @@ abstract class AbstractEntity
                             foreach($value as &$v) {
                                 // todo: check to see if Doctrine makes a query for each reference
                                 //       I sure hope not or that will be a nasty performance hit
-                                $entity = $this->_normalize($v, $mapping['targetEntity']);
+                                $entity = $this->_decode($v, $mapping['targetEntity']);
                                 $entity->$ownedFieldName = $this;
                             }
                         }
@@ -588,7 +591,7 @@ abstract class AbstractEntity
         $setter = 'set' . ucfirst($key);
         if (method_exists($this, $setter)) {
             $this->$setter($value);
-        } elseif (isset($this->$key) || property_exists($this, $key)) {
+        } else if (isset($this->$key) || property_exists($this, $key)) {
             if ($this->$key instanceof Collection && is_array($value)) {
                 $this->$key->clear();
                 foreach($value as $v) {
@@ -601,19 +604,41 @@ abstract class AbstractEntity
     }
     
     /**
-     * Normalizes a value for entity insertion.
+     * Encodes a value.
+     * 
+     * @param mixed $value
+     * @return string
+     */
+    protected static function _encode($value)
+    {
+        if (is_object($value)) {
+            ; // intentionally left blank
+        } else if (is_array($value)) {
+            if (count($value) > 1) {
+                $value = self::ENCODE_PREFIX . base64_encode(serialize($value));
+            } else {
+                $value = current($value);
+            } 
+        } else if (is_null($value)) {
+            $value = self::ENCODE_PREFIX . base64_encode(serialize($value));
+        }
+        return $value;
+    }
+    
+    /**
+     * Decodes a value for entity insertion.
      * 
      * @param mixed $value
      * @param string $targetEntity
      */
-    protected function _normalize($value, $targetEntity)
+    protected function _decode($value, $targetEntity)
     {
         if (is_object($value)) {
             ; // intentionally left blank
         } else if (is_numeric($value)) {
             $value = $this->getEntityManager()->getReference($targetEntity, $value);
-        } else if ($this->_isSerialized($value)) {
-            $value = unserialize($value);
+        } else if (substr($value, 0, strlen(self::ENCODE_PREFIX)) == self::ENCODE_PREFIX) {
+            $value = unserialize(base64_decode(substr($value, strlen(self::ENCODE_PREFIX))));
             
             if ($value !== null) {
                 $value = $this->getEntityManager()->getReference($targetEntity, $value);

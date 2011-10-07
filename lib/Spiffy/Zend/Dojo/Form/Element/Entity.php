@@ -1,4 +1,5 @@
 <?php
+use Spiffy\Doctrine\AbstractEntity;
 class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitMulti
 {
     
@@ -93,7 +94,7 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
         $options = array();
         
         if ($this->getEmpty()) {
-            $options[serialize(null)] = $this->getEmpty();
+            $options[AbstractEntity::getEncodedValue(null)] = $this->getEmpty();
         }
         
         $entityManager = $this->_entityManager;
@@ -106,21 +107,9 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
                 if (!is_object($row)) {
                     throw new Exception\InvalidResult('row result must be an object');
                 }
-            
-                if ($this->getProperty()) {
-                    $value = $row->_get($this->getProperty());
-                } else {
-                    $value = (string) $row;
-                }
                 
-                $id = null;
-                $idValues = $mdata->getIdentifierValues($row);
-                if (count($idValues) == 1) {
-                    $id = current($idValues);
-                } else {
-                    $id = serialize($idValues);
-                }
-                $options[$id] = $value;
+                $value = $this->getProperty() ? $row->_get($this->getProperty()) : (string) $row; 
+                $options[$row->getEntityIdentifier()] = $value;
             }
         }
         
