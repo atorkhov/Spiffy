@@ -11,7 +11,7 @@ integration with the two libraries. Currently, the following features are suppor
 Following is a rundown of each class and the features it provides.
 
 Spiffy\Doctrine\AbstractEntity
-------------------------------
+-------------------
 This class is intended to be used as a parent for all your Doctrine 2 entities. By extending this class
 your entities have several new features:
 
@@ -33,7 +33,7 @@ extends Zend_Dojo_Form to provide additional Dojo integration. Features for both
 *	Integration with Doctrine entities.
 *	Integration with Spiffy\Doctrine\AbstractEntity to set validators and filters via annotations.
 *	Optional automatic persistance of Doctrine entities when the form is valid.
-*	Additional form element (Entity) for ToOne and ToMany relations.
+*	Additional form elements for Entity, ComboBox, and FilteringSelect.
 
 For more information see docs/form.md.
 
