@@ -58,7 +58,7 @@ class Form extends Zend_Form
         Type::DECIMAL       => 'NumberSpinner',
         Type::OBJECT        => null,
         Type::TARRAY        => null,
-        Type::STRING        => 'TextBox',
+        Type::STRING        => 'ValidationTextBox',
         Type::TEXT          => 'Textarea',
         Type::TIME          => 'TimeTextBox',
         'TO_ONE'            => 'Entity',
