@@ -68,7 +68,7 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
         }
         
         $this->_entityManager = Zend_Registry::get('Spiffy_Doctrine')->getEntityManager();
-        $this->options = $this->_getOptions();
+        $this->_setOptionsOrData();        
 
         if ($this->multiple) {
             $this->_isArray = true;
@@ -76,13 +76,88 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
     }
     
     /**
-     * Gets the options for the element.
+     * Get datastore information
+     *
+     * @return array
+     */
+    public function getStoreInfo()
+    {
+        if (!$this->hasDijitParam('store')) {
+            $this->dijitParams['store'] = array();
+        }
+        return $this->dijitParams['store'];
+    }
+    
+    /**
+     * Set datastore identifier
+     *
+     * @param  string $identifier
+     * @return Zend_Dojo_Form_Element_ComboBox
+     */
+    public function setStoreId($identifier)
+    {
+        $store = $this->getStoreInfo();
+        $store['store'] = (string) $identifier;
+        $store['type'] = "dojo.data.ItemFileReadStore";
+        
+        $this->setDijitParam('store', $store);
+        return $this;
+    }
+    
+    /**
+     * Get datastore identifier
+     *
+     * @return string|null
+     */
+    public function getStoreId()
+    {
+        $store = $this->getStoreInfo();
+        if (array_key_exists('store', $store)) {
+            return $store['store'];
+        }
+        return null;
+    }
+    
+    /**
+     * Set datastore parameters
+     *
+     * @param  array $params
+     * @return Zend_Dojo_Form_Element_ComboBox
+     */
+    public function setStoreParams(array $params)
+    {
+        $store = $this->getStoreInfo();
+        $store['params'] = $params;
+        $this->setDijitParam('store', $store);
+        return $this;
+    }
+    
+    /**
+     * Get datastore params
+     *
+     * @return array
+     */
+    public function getStoreParams()
+    {
+        $store = $this->getStoreInfo();
+        if (array_key_exists('params', $store)) {
+            return $store['params'];
+        }
+        return array();
+    }
+    
+    /**
+     * Sets the options for the element or, if a Dojo store is enabled, the data for
+     * the store.
      * 
      * @throws Exception\InvalidResult
      * @return array
      */
-    protected function _getOptions()
+    protected function _setOptionsOrData()
     {
+        $store = $this->getStoreInfo();
+        $isStore = !empty($store);
+        
         $qb = $this->getQueryBuilder();
         if (!$qb instanceof Closure) {
             $qb = function ($er)
@@ -91,16 +166,18 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
             };
         }
         
-        $options = array();
-        
-        if ($this->getEmpty()) {
-            $options[AbstractEntity::getEncodedValue(null)] = $this->getEmpty();
-        }
-        
         $entityManager = $this->_entityManager;
         $mdata = $entityManager->getClassMetadata($this->getClass());
         $repository = $entityManager->getRepository($this->getClass());
         
+        $data = array();
+        
+        // empty value for non-store data
+        if (!$isStore && $this->getEmpty()) {
+            $data[AbstractEntity::getEncodedValue(null)] = $this->getEmpty();
+        }
+        
+        // build the query
         $qb = call_user_func($qb, $repository);
         if ($qb) {
             foreach ($qb->getQuery()->execute() as $row) {
@@ -108,12 +185,21 @@ class Spiffy_Zend_Dojo_Form_Element_Entity extends Zend_Dojo_Form_Element_DijitM
                     throw new Exception\InvalidResult('row result must be an object');
                 }
                 
-                $value = $this->getProperty() ? $row->_get($this->getProperty()) : (string) $row; 
-                $options[$row->getEntityIdentifier()] = $value;
+                if ($isStore) {
+                    $data[] = array_merge(array('id' => $row->getEntityIdentifier()), $row->toArray(true, false));
+                }
+                
+                $value = $this->getProperty() ? $row->_get($this->getProperty()) : (string) $row;
+                $this->options[$row->getEntityIdentifier()] = $value;                    
             }
         }
         
-        return $options;
+        // set data based on store or regular
+        if ($isStore) {
+            $data = new Zend_Dojo_Data('id', $data);
+            $store['params']['data'] = $data->toArray();
+            $this->setDijitParam('store', $store);
+        }
     }
     
    /**
