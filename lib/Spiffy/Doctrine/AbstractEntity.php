@@ -456,7 +456,11 @@ abstract class AbstractEntity
                 if ($assValue instanceof AbstractEntity) {
                     $result[$assName] = $this->_get($assName)
                                              ->toArray($filter, $includeNull);
-                }    
+                } elseif ($assValue instanceof Collection) {
+                    foreach($assValue as $av) {
+                        $result[$assName][] = $av->toArray();
+                    }    
+                }
             } else if(isset($assData['targetToSourceKeyColumns'])) {
                 $value = array();
                 foreach($assData['targetToSourceKeyColumns'] as $target => $source) {
