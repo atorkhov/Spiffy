@@ -454,11 +454,10 @@ abstract class AbstractEntity
                 $assValue = $this->_get($assName); // lulz
                 
                 if ($assValue instanceof AbstractEntity) {
-                    $result[$assName] = $this->_get($assName)
-                                             ->toArray($filter, $includeNull);
+                    $result[$assName] = $this->_get($assName)->toArray($filter, $includeNull);
                 } elseif ($assValue instanceof Collection) {
                     foreach($assValue as $av) {
-                        $result[$assName][] = $av->toArray();
+                        $result[$assName][] = $av->toArray($filter, $includeNull);
                     }    
                 }
             } else if(isset($assData['targetToSourceKeyColumns'])) {
