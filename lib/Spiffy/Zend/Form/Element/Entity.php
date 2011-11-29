@@ -1,35 +1,37 @@
 <?php
+use Spiffy\Doctrine\AbstractEntity;
 class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
 {
-    /**
-     * Default helper.
-     * @var string
-     */
-    protected $_defaultHelper = 'formSelect';
     
     /**
-     * Multiple expanded helper.
+     * Helper used to render element.
      * @var string
      */
-    protected $_multipleExpandedHelper = 'formMultiCheckbox';
+    public $helper = 'formSelect';
+    
+    /**
+     * flag: is the element expanded?
+     * @var boolean
+     */
+    public $expanded = false;
+    
+    /**
+     * flag: is the element multiple?
+     * @var boolean
+     */
+    public $multiple = false;
 
-   /**
-    * Expanded helper.
-    * @var string
-    */
-    protected $_expandedHelper = 'formRadio';
-    
-    /**
-     * Multiple helper.
-     * @var string
-     */
-    protected $_multipleHelper = 'formSelect';
-    
     /**
      * Entity class.
      * @var string
      */
     protected $_class;
+    
+    /**
+     * Empty label.
+     * @var string
+     */
+    protected $_empty;
     
     /**
      * Sets the property to read for the class.
@@ -38,22 +40,10 @@ class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
     protected $_property;
     
     /**
-     * flag: is field expanded?
-     * @var boolean
+     * Doctrine entity manager
+     * @var Doctrine\ORM\EntityManager
      */
-    protected $_expanded = false;
-    
-    /**
-     * flag: is field multiple?
-     * @var boolean
-     */
-    protected $_multiple = false;
-    
-    /**
-     * Spiffy container.
-     * @var Spiffy\Doctrine\Container
-     */
-    protected $_doctrine;
+    protected $_entityManager;
 
     /**
      * Query builder.
@@ -69,7 +59,7 @@ class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
     {
         if (!Zend_Registry::isRegistered('Spiffy_Doctrine')) {
             throw new Zend_Form_Exception(
-            	'Spiffy\Doctrine\Container is required when using Entity'
+                'Spiffy\Doctrine\Container is required when using Entity'
             );
         }
 
@@ -77,13 +67,22 @@ class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
             throw new Zend_Form_Element_Exception(get_class($this) . ' requires a class');
         }
         
-        $this->helper = $this->_defaultHelper;
+        $this->_entityManager = Zend_Registry::get('Spiffy_Doctrine')->getEntityManager();
+        $this->_setOptionsOrData();        
 
-        $this->_doctrine = Zend_Registry::get('Spiffy_Doctrine');
-        $this->options = $this->_getOptions();
+        if ($this->multiple) {
+            $this->_isArray = true;
+        }
     }
     
-    protected function _getOptions()
+    /**
+     * Sets the options for the element or, if a Dojo store is enabled, the data for
+     * the store.
+     * 
+     * @throws Exception\InvalidResult
+     * @return array
+     */
+    protected function _setOptionsOrData()
     {
         $qb = $this->getQueryBuilder();
         if (!$qb instanceof Closure) {
@@ -93,35 +92,29 @@ class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
             };
         }
         
-        $options = array();
-        
-        $entityManager = $this->_doctrine->getEntityManager();
+        $entityManager = $this->_entityManager;
         $mdata = $entityManager->getClassMetadata($this->getClass());
         $repository = $entityManager->getRepository($this->getClass());
         
-        $qb = call_user_func($qb, $repository);
-        foreach ($qb->getQuery()->execute() as $row) {
-            if (!is_object($row)) {
-                throw new Exception\InvalidResult('row result must be an object');
-            }
+        $data = array();
         
-            if ($this->getProperty()) {
-                $value = $row->getValue($this->getProperty());
-            } else {
-                $value = (string) $row;
-            }
-            
-            $id = null;
-            $idValues = $mdata->getIdentifierValues($row);
-            if (count($idValues) == 1) {
-                $id = current($idValues);
-            } else {
-                $id = serialize($idValues);
-            }
-            $options[$id] = $value;
+        // empty value for non-store data
+        if ($this->getEmpty()) {
+            $data[AbstractEntity::getEncodedValue(null)] = $this->getEmpty();
         }
         
-        return $options;
+        // build the query
+        $qb = call_user_func($qb, $repository);
+        if ($qb) {
+            foreach ($qb->getQuery()->execute() as $row) {
+                if (!is_object($row)) {
+                    throw new Exception\InvalidResult('row result must be an object');
+                }
+                
+                $value = $this->getProperty() ? $row->_get($this->getProperty()) : (string) $row;
+                $this->options[$row->getEntityIdentifier()] = $value;                    
+            }
+        }
     }
     
    /**
@@ -144,46 +137,6 @@ class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
         return $this->_property;
     }
 
-   /**
-    * Set the expanded flag.
-    *
-    * @param boolean $expanded
-    */
-    public function setExpanded($expanded)
-    {
-        $this->_expanded = $expanded;
-    }
-    
-    /**
-     * Get the expanded flag.
-     *
-     * @return boolean
-     */
-    public function getExpanded()
-    {
-        return $this->_expanded;
-    }
-    
-    /**
-     * Set the multiple flag.
-     * 
-     * @param boolean $multiple
-     */
-    public function setMultiple($multiple)
-    {
-        $this->_multiple = $multiple;
-    }
-    
-    /**
-     * Get the multiple flag.
-     * 
-     * @return boolean
-     */
-    public function getMultiple()
-    {
-        return $this->_multiple;
-    }
-    
     /**
      * Get entity class.
      */
@@ -201,7 +154,25 @@ class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
     {
         $this->_class = $class;
     }
-
+    
+    /**
+    * Set empty label.
+    *
+    * @param string $empty
+    */
+    public function setEmpty($empty)
+    {
+        $this->_empty = $empty;
+    }
+    
+    /**
+     * Get empty label.
+     */
+    public function getEmpty()
+    {
+        return $this->_empty;
+    }
+    
     /**
      * Get query builder.
      *
@@ -220,43 +191,5 @@ class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
     public function setQueryBuilder(Closure $qb)
     {
         $this->_queryBuilder = $qb;
-    }
-    
-   /**
-    * Render form element
-    *
-    * @param  Zend_View_Interface $view
-    * @return string
-    */
-    public function render(Zend_View_Interface $view = null)
-    {
-        if ($this->getMultiple() && $this->getExpanded()) {
-            $this->helper = $this->_multipleExpandedHelper;
-            $this->_isArray = true;
-        } else if ($this->getMultiple()) {
-            $this->helper = $this->_multipleHelper;
-            $this->_isArray = true;
-        } else if ($this->getExpanded()) {
-            $this->helper = $this->_expandedHelper;
-            $this->_isArray = false;
-        } else {
-            $this->helper = $this->_defaultHelper;
-            $this->_isArray = false;
-        }
-        
-        if ($this->_isPartialRendering) {
-            return '';
-        }
-    
-        if (null !== $view) {
-            $this->setView($view);
-        }
-    
-        $content = '';
-        foreach ($this->getDecorators() as $decorator) {
-            $decorator->setElement($this);
-            $content = $decorator->render($content);
-        }
-        return $content;
     }
 }
