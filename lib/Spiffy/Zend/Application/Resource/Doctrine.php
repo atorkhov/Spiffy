@@ -47,7 +47,7 @@ class Spiffy_Zend_Application_Resource_Doctrine extends Zend_Application_Resourc
                     'host' => 'localhost',
                     'driver' => 'pdo_mysql'
                 )
-            )
+            ),
         ),
         'orm' => array(
             'em' => array(
@@ -78,6 +78,8 @@ class Spiffy_Zend_Application_Resource_Doctrine extends Zend_Application_Resourc
                                 'aliases' => array()
                             )
                         )
+                    ),
+                    'customStringFunctions' => array(
                     )
                 )
             )

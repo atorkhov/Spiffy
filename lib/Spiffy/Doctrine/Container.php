@@ -412,6 +412,8 @@ class Container
         $config->setMetadataCacheImpl($this->getCache($emOptions['cache']['metadata']));
         $config->setQueryCacheImpl($this->getCache($emOptions['cache']['query']));
         $config->setResultCacheImpl($this->getCache($emOptions['cache']['result']));
+        
+        $config->setCustomStringFunctions($emOptions['customStringFunctions']);
 
         $em = EntityManager::create($this->getConnection($connection), $config);
         
