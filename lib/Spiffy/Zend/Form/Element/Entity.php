@@ -100,7 +100,7 @@ class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
         
         // empty value for non-store data
         if ($this->getEmpty()) {
-            $data[AbstractEntity::getEncodedValue(null)] = $this->getEmpty();
+            $this->options[AbstractEntity::getEncodedValue(null)] = $this->getEmpty();
         }
         
         // build the query
