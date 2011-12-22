@@ -258,6 +258,17 @@ class Container
     }
     
     /**
+     * Shortcut to getting an entity's repository.
+     * 
+     * @param $name   Name of entity repository to fetch
+     * @param $emName Entity manager to use.
+     */
+    public function getRepository($name, $emName = null)
+    {
+        return $this->getEntityManager($emName)->getRepository($name);
+    }
+    
+    /**
      * Prepares a cache instance.
      * 
      * @todo add additional parameters for configuring memcache.
