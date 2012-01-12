@@ -358,6 +358,21 @@ class Container
 
         $reflClass = new ReflectionClass($driverClass);
 
+/*
+        foreach($drivers as $driverOpts) {
+            $this->validateOptions($driverOpts, $this->driverChainDefinition);
+            
+            if (($driverOpts['class'] == $this->annotationDriverClass) ||
+                (is_subclass_of($driverOpts['class'], $this->annotationDriverClass))
+            ) {
+                $cachedReader = $this->getCachedReader();
+                $driver = new $driverOpts['class']($cachedReader, $driverOpts['paths']);
+            } else {
+                $driver = new $driverOpts['class']($driverOpts['paths']);
+            }
+            $chain->addDriver($driver, $driverOpts['namespace']);
+        }*/
+
         // annotation driver has extra initialization options
         if ($reflClass->getName() == 'Doctrine\ORM\Mapping\Driver\AnnotationDriver'
             || $reflClass->isSubclassOf('Doctrine\ORM\Mapping\Driver\AnnotationDriver')) {
@@ -365,11 +380,14 @@ class Container
                 throw new Exception\InvalidMetadataDriver(
                     'AnnotationDriver was specified but no reader options exist');
             }
+            
+            $readerClass  = $driverOptions['reader']['class'];
+            $cachedReader = new \Doctrine\Common\Annotations\CachedReader(
+                new $readerClass,
+                $this->getCache($driverOptions['reader']['cache'])
+            );
 
-            $readerClass = $driverOptions['reader']['class'];
-            $reader = new $readerClass();
-
-            $driver = new $driverClass($reader, $driverOptions['paths']);
+            $driver = new $driverClass($cachedReader, $driverOptions['paths']);
         } else {
             $driver = new $driverClass($driverOptions['paths']);
         }

@@ -498,7 +498,7 @@ abstract class AbstractEntity
                     if (!$this->$key instanceof Collection) {
                         $this->$key = new ArrayCollection;
                     }
-
+                    
                     foreach($value as &$v) {
                         $v = $this->_decode($v, $mapping['targetEntity']);
                     }

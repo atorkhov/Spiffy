@@ -16,6 +16,12 @@ class Get extends Zend_View_Helper_Abstract
         $front = Zend_Controller_Front::getInstance();
         $bootstrap = $front->getParam('bootstrap');
         
-        return $bootstrap->getResource('service')->get($service);
+        try {
+            $svc = $bootstrap->getResource('service')->get($service);
+        } catch (\Exception $e) {
+            $svc = null;
+        }
+        
+        return $svc;
     }
 }
