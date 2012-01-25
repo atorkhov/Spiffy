@@ -20,6 +20,12 @@ class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
      * @var boolean
      */
     public $multiple = false;
+    
+    /**
+     * Preloaded data.
+     * @var array
+     */
+    protected $_preload;
 
     /**
      * Entity class.
@@ -103,6 +109,12 @@ class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
             $this->options[AbstractEntity::getEncodedValue(null)] = $this->getEmpty();
         }
         
+        if ($this->getPreload()) {
+            foreach($this->getPreload() as $key => $value) {
+                $this->options[$key] = $value;
+            }
+        }
+        
         // build the query
         $qb = call_user_func($qb, $repository);
         if ($qb) {
@@ -112,7 +124,7 @@ class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
                 }
                 
                 $value = $this->getProperty() ? $row->_get($this->getProperty()) : (string) $row;
-                $this->options[$row->getEntityIdentifier()] = $value;                    
+                $this->options[$row->getEntityIdentifier()] = $value;
             }
         }
     }
@@ -136,13 +148,31 @@ class Spiffy_Zend_Form_Element_Entity extends Zend_Form_Element_Multi
     {
         return $this->_property;
     }
-
+    
     /**
      * Get entity class.
      */
     public function getClass()
     {
         return $this->_class;
+    }
+
+    /**
+     * Set entity preload.
+     *
+     * @param array $preload
+     */
+    public function setPreload($preload)
+    {
+        $this->_preload = $preload;
+    }
+
+    /**
+     * Get entity preload.
+     */
+    public function getPreload()
+    {
+        return $this->_preload;
     }
 
     /**

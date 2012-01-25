@@ -170,9 +170,7 @@ class Form extends Zend_Form
         }
         
         if ($element === 'hidden') {
-            $options['decorators'] = array(
-            	'ViewHelper'
-            );
+            $options['decorators'] = array('ViewHelper');
         }
         
         if (!array_key_exists('label', $options) && $element != 'hidden') {
