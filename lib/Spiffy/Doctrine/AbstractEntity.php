@@ -541,7 +541,7 @@ abstract class AbstractEntity
     {
         $value = null;
         
-        $getter = 'get' . ucfirst($field);
+        $getter = 'get' . \Doctrine\Common\Util\Inflector::classify($field);
         if (method_exists($this, $getter)) {
             $value = $this->$getter();
         } elseif (isset($this->$field) || property_exists($this, $field)) {
@@ -591,7 +591,7 @@ abstract class AbstractEntity
      */
     protected function _set($key, $value)
     {
-        $setter = 'set' . ucfirst($key);
+        $setter = 'set' . \Doctrine\Common\Util\Inflector::classify($key);
         if (method_exists($this, $setter)) {
             $this->$setter($value);
         } else if (isset($this->$key) || property_exists($this, $key)) {
